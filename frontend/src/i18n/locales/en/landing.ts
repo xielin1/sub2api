@@ -19,9 +19,13 @@ export default {
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
     // Aphelion theme copy
     aphelion: {
-      badge: 'Aphelion · the far point of the orbit',
-      tagline: 'Farthest from the star, still perfectly on course — every request finds its way home.',
-      orbitCaption: 'now at aphelion · 152,100,000 km from the sun'
+      badge: 'Your trusted partner',
+      tagline: 'Steady, exactly where you need it — every request finds its way home.',
+      orbitCaption: 'Straight to the source · nothing in between',
+      // Contact support dialog
+      contactHint: 'Questions about access, billing or your account? Reach out any time.',
+      contactLinkLabel: 'Live support',
+      contactTextLabel: 'Contact details (click to select all)'
     },
     tags: {
       subscriptionToApi: 'Subscription to API',

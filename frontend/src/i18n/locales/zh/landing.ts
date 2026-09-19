@@ -19,9 +19,13 @@ export default {
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
     // 远日点主题文案
     aphelion: {
-      badge: '远日点 · 轨道的最远处',
-      tagline: '离恒星最远，也依然稳稳沿轨运行 —— 每一次请求都能准时返航。',
-      orbitCaption: '此刻位于远日点 · 距日 1.521 亿公里'
+      badge: '你的信赖伙伴',
+      tagline: '稳定在你需要的位置 —— 每一次请求都能准时返航。',
+      orbitCaption: '请求直送官方源 · 无中间层',
+      // 联系客服弹窗
+      contactHint: '遇到接入、计费或账号问题，欢迎随时联系我们。',
+      contactLinkLabel: '在线客服',
+      contactTextLabel: '联系方式（点击可全选）'
     },
     tags: {
       subscriptionToApi: '订阅转 API',

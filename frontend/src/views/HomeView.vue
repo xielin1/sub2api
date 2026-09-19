@@ -302,34 +302,85 @@
             <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
           </router-link>
 
-          <!-- Contact support: a link when the setting is a URL, otherwise reveal the details -->
-          <a
-            v-if="contactUrl"
-            :href="contactUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
-          >
-            {{ t('common.contactSupport') }}
-          </a>
+          <!-- 联系客服：点击弹窗展示联系方式；未配置 contact_info 时整块不渲染 -->
           <button
-            v-else-if="contactInfo"
+            v-if="contactInfo"
             type="button"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
-            @click="contactRevealed = !contactRevealed"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
+            @click="contactDialogOpen = true"
           >
+            <Icon name="chatBubble" size="md" :stroke-width="2" />
             {{ t('common.contactSupport') }}
           </button>
         </div>
-
-        <p
-          v-if="contactRevealed && contactInfo && !contactUrl"
-          class="mt-4 [overflow-wrap:anywhere] text-sm text-gray-600 dark:text-[#c9c4b6]"
-        >
-          {{ contactInfo }}
-        </p>
       </div>
     </main>
+
+    <!-- 联系客服弹窗：沿用公告弹窗的暖色头部与卡片尺寸 -->
+    <BaseDialog
+      :show="contactDialogOpen"
+      :title="t('common.contactSupport')"
+      width="normal"
+      close-on-click-outside
+      @close="contactDialogOpen = false"
+    >
+      <div class="space-y-5">
+        <div class="flex items-start gap-4">
+          <div
+            class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30"
+          >
+            <Icon name="chatBubble" size="md" :stroke-width="2" />
+          </div>
+          <p class="pt-1 text-sm leading-relaxed text-gray-600 dark:text-dark-300">
+            {{ t('home.aphelion.contactHint') }}
+          </p>
+        </div>
+
+        <!-- 联系方式：链接可直接点，纯文本（微信号 / QQ 号）选中复制 -->
+        <a
+          v-if="contactUrl"
+          :href="contactUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-dark-700 dark:bg-dark-900/40 dark:text-amber-400 dark:hover:border-amber-500/50 dark:hover:bg-amber-900/20"
+        >
+          <span class="mb-0.5 block text-xs font-normal text-gray-500 dark:text-dark-400">
+            {{ t('home.aphelion.contactLinkLabel') }}
+          </span>
+          <span class="[overflow-wrap:anywhere]">{{ contactInfo }}</span>
+        </a>
+        <div
+          v-else
+          class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/40"
+        >
+          <span class="mb-0.5 block text-xs text-gray-500 dark:text-dark-400">
+            {{ t('home.aphelion.contactTextLabel') }}
+          </span>
+          <span
+            class="block select-all font-mono text-base font-semibold tracking-wide text-gray-900 [overflow-wrap:anywhere] dark:text-white"
+          >
+            {{ contactInfo }}
+          </span>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <button
+            v-if="!contactUrl"
+            type="button"
+            class="btn btn-secondary"
+            @click="copyContact()"
+          >
+            <Icon name="copy" size="sm" class="mr-1.5" />
+            {{ copied ? t('common.copied') : t('common.copy') }}
+          </button>
+          <button type="button" class="btn btn-primary" @click="contactDialogOpen = false">
+            {{ t('common.close') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
 
     <!-- Footer -->
     <footer class="relative z-10 border-t border-gray-200/50 px-6 py-8 dark:border-dark-800/50">
@@ -349,14 +400,6 @@
           >
             {{ t('home.docs') }}
           </a>
-          <a
-            :href="githubUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
-          >
-            GitHub
-          </a>
         </div>
       </div>
     </footer>
@@ -367,9 +410,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import { useClipboard } from '@/composables/useClipboard'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 
 const { t } = useI18n()
@@ -394,7 +439,16 @@ const contactInfo = computed(() =>
 const contactUrl = computed(() =>
   /^https?:\/\//i.test(contactInfo.value) ? sanitizeUrl(contactInfo.value) : '',
 )
-const contactRevealed = ref(false)
+
+// 联繗客服弹窗开关
+const contactDialogOpen = ref(false)
+
+// 纯文本联系方式不支持点击跳转，改为提供一键复制
+const { copied, copyToClipboard } = useClipboard()
+
+function copyContact() {
+  copyToClipboard(contactInfo.value)
+}
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 
 // Check if homeContent is a URL (for iframe display)
@@ -405,9 +459,6 @@ const isHomeContentUrl = computed(() => {
 
 // Theme
 const isDark = ref(document.documentElement.classList.contains('dark'))
-
-// GitHub URL
-const githubUrl = 'https://github.com/Wei-Shaw/sub2api'
 
 // Auth state
 const isAuthenticated = computed(() => authStore.isAuthenticated)
