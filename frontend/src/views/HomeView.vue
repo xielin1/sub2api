@@ -90,27 +90,29 @@
     </footer>
   </div>
 
-  <!-- Default Home Page -->
+  <!-- Default Home Page - Aphelion Theme -->
   <div
     v-else
-    class="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
+    class="aphelion relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-b from-[#f7f4ed] via-[#f4f1e9] to-[#efe9dd] dark:from-[#1b1c19] dark:via-[#171815] dark:to-[#121310]"
   >
-    <!-- Background Decorations -->
+    <!-- Deep Space Backdrop -->
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <!-- Starfield -->
+      <div class="starfield starfield--far"></div>
+      <div class="starfield starfield--near"></div>
+      <!-- Distant sun: small, cold, far away -->
+      <div class="distant-sun"></div>
       <div
-        class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/20 blur-3xl"
+        class="absolute -bottom-52 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#d66b4d]/10 blur-3xl dark:bg-[#d66b4d]/15"
       ></div>
       <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary-500/15 blur-3xl"
+        class="absolute left-1/3 top-1/3 h-72 w-72 rounded-full bg-[#c9a227]/10 blur-3xl dark:bg-[#8a6a3b]/15"
       ></div>
+      <!-- Faint orbital arcs sweeping across the sky -->
+      <div class="sky-orbit sky-orbit--one"></div>
+      <div class="sky-orbit sky-orbit--two"></div>
       <div
-        class="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-primary-300/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-primary-400/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
+        class="absolute inset-0 bg-[linear-gradient(rgba(140,132,110,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(140,132,110,0.06)_1px,transparent_1px)] bg-[size:72px_72px]"
       ></div>
     </div>
 
@@ -119,7 +121,7 @@
       <nav class="mx-auto flex max-w-6xl items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center">
-          <div class="h-10 w-10 overflow-hidden rounded-xl shadow-md">
+          <div class="h-12 w-12 overflow-hidden">
             <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
           </div>
         </div>
@@ -199,36 +201,60 @@
       </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="relative z-10 flex-1 px-6 py-16">
-      <div class="mx-auto max-w-6xl">
-        <!-- Hero Section - Left/Right Layout -->
-        <div class="mb-12 flex flex-col items-center justify-between gap-12 lg:flex-row lg:gap-16">
-          <!-- Left: Text Content -->
-          <div class="flex-1 text-center lg:text-left">
-            <h1
-              class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
-            >
-              {{ siteName }}
-            </h1>
-            <p class="mb-8 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
-              {{ siteSubtitle }}
-            </p>
+    <!-- Main Content - centered, deliberately minimal -->
+    <main class="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
+      <div class="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+        <!-- Aphelion badge -->
+        <div
+          class="mb-5 inline-flex items-center gap-2 rounded-full border border-[#d66b4d]/40 bg-white/70 px-3.5 py-1.5 text-xs font-medium tracking-wide text-[#b4523a] shadow-sm backdrop-blur-sm dark:border-[#d66b4d]/30 dark:bg-white/5 dark:text-[#e79878]"
+        >
+          <span class="aphelion-pip"></span>
+          {{ t('home.aphelion.badge') }}
+        </div>
 
-            <!-- CTA Button -->
-            <div>
-              <router-link
-                :to="isAuthenticated ? dashboardPath : '/login'"
-                class="btn btn-primary px-8 py-3 text-base shadow-lg shadow-primary-500/30"
-              >
-                {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
-                <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
-              </router-link>
-            </div>
-          </div>
+        <h1
+          class="mb-4 [overflow-wrap:anywhere] text-4xl font-bold text-gray-900 md:text-5xl lg:text-6xl dark:text-[#f3f1ea]"
+        >
+          {{ siteName }}
+        </h1>
+        <p class="mb-3 text-lg text-gray-600 dark:text-[#c9c4b6] md:text-xl">
+          {{ siteSubtitle }}
+        </p>
+        <p class="mb-8 max-w-xl text-sm leading-relaxed text-gray-500 dark:text-[#8f897b]">
+          {{ t('home.aphelion.tagline') }}
+        </p>
 
-          <!-- Right: Terminal Animation -->
-          <div class="flex flex-1 justify-center lg:justify-end">
+        <!-- Orbit Scene: the terminal sits at the far point of the orbit -->
+        <div class="orbit-stage">
+          <svg class="orbit-svg" viewBox="0 0 560 420" aria-hidden="true" focusable="false">
+            <defs>
+              <radialGradient id="aphelionSunGlow">
+                <stop offset="0%" stop-color="#f3f1ea" stop-opacity="0.7" />
+                <stop offset="35%" stop-color="#e2b08a" stop-opacity="0.22" />
+                <stop offset="100%" stop-color="#d66b4d" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <g transform="rotate(-22 280 210)">
+              <ellipse class="orbit-path" cx="280" cy="210" rx="285" ry="150" />
+              <circle cx="38" cy="210" r="40" fill="url(#aphelionSunGlow)" />
+              <circle class="orbit-sun" cx="38" cy="210" r="8" />
+              <circle class="orbit-apex" cx="565" cy="210" r="5" />
+              <circle class="orbit-planet" r="7">
+                <animateMotion
+                  dur="24s"
+                  repeatCount="indefinite"
+                  path="M 565 210 A 285 150 0 1 1 -5 210 A 285 150 0 1 1 565 210"
+                  calcMode="spline"
+                  keyPoints="0;1"
+                  keyTimes="0;1"
+                  keySplines="0.45 0 0.55 1"
+                />
+              </circle>
+            </g>
+          </svg>
+
+          <!-- Card + caption stack, sized by the stage so the orbit never reflows it -->
+          <div class="orbit-inner">
             <div class="terminal-container">
               <div class="terminal-window">
                 <!-- Window header -->
@@ -238,7 +264,7 @@
                     <span class="btn-minimize"></span>
                     <span class="btn-maximize"></span>
                   </div>
-                  <span class="terminal-title">terminal</span>
+                  <span class="terminal-title">aphelion ~ terminal</span>
                 </div>
                 <!-- Terminal content -->
                 <div class="terminal-body">
@@ -262,202 +288,46 @@
                 </div>
               </div>
             </div>
+            <p class="orbit-caption">{{ t('home.aphelion.orbitCaption') }}</p>
           </div>
         </div>
 
-        <!-- Feature Tags - Centered -->
-        <div class="mb-12 flex flex-wrap items-center justify-center gap-4 md:gap-6">
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
+        <!-- Actions -->
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <router-link
+            :to="isAuthenticated ? dashboardPath : '/login'"
+            class="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#d66b4d] px-8 py-3 text-base font-medium text-[#fdf8f2] shadow-lg shadow-[#d66b4d]/30 transition-colors hover:bg-[#c25f43]"
           >
-            <Icon name="swap" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.subscriptionToApi')
-            }}</span>
-          </div>
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
+            {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+            <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
+          </router-link>
+
+          <!-- Contact support: a link when the setting is a URL, otherwise reveal the details -->
+          <a
+            v-if="contactUrl"
+            :href="contactUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
           >
-            <Icon name="shield" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.stickySession')
-            }}</span>
-          </div>
-          <div
-            class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
+            {{ t('common.contactSupport') }}
+          </a>
+          <button
+            v-else-if="contactInfo"
+            type="button"
+            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
+            @click="contactRevealed = !contactRevealed"
           >
-            <Icon name="chart" size="sm" class="text-primary-500" />
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
-              t('home.tags.realtimeBilling')
-            }}</span>
-          </div>
+            {{ t('common.contactSupport') }}
+          </button>
         </div>
 
-        <!-- Features Grid -->
-        <div class="mb-12 grid gap-6 md:grid-cols-3">
-          <!-- Feature 1: Unified Gateway -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 transition-transform group-hover:scale-110"
-            >
-              <Icon name="server" size="lg" class="text-white" />
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.unifiedGateway') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.unifiedGatewayDesc') }}
-            </p>
-          </div>
-
-          <!-- Feature 2: Account Pool -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 transition-transform group-hover:scale-110"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-                />
-              </svg>
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.multiAccount') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.multiAccountDesc') }}
-            </p>
-          </div>
-
-          <!-- Feature 3: Billing & Quota -->
-          <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
-          >
-            <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30 transition-transform group-hover:scale-110"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-                />
-              </svg>
-            </div>
-            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              {{ t('home.features.balanceQuota') }}
-            </h3>
-            <p class="text-sm leading-relaxed text-gray-600 dark:text-dark-400">
-              {{ t('home.features.balanceQuotaDesc') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Supported Providers -->
-        <div class="mb-8 text-center">
-          <h2 class="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
-            {{ t('home.providers.title') }}
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-dark-400">
-            {{ t('home.providers.description') }}
-          </p>
-        </div>
-
-        <div class="mb-16 flex flex-wrap items-center justify-center gap-4">
-          <!-- Claude - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-500"
-            >
-              <span class="text-xs font-bold text-white">C</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.claude') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- GPT - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600"
-            >
-              <span class="text-xs font-bold text-white">G</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">GPT</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- Gemini - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600"
-            >
-              <span class="text-xs font-bold text-white">G</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.gemini') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- Antigravity - Supported -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-primary-200 bg-white/60 px-5 py-3 ring-1 ring-primary-500/20 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-600"
-            >
-              <span class="text-xs font-bold text-white">A</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.antigravity') }}</span>
-            <span
-              class="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-              >{{ t('home.providers.supported') }}</span
-            >
-          </div>
-          <!-- More - Coming Soon -->
-          <div
-            class="flex items-center gap-2 rounded-xl border border-gray-200/50 bg-white/40 px-5 py-3 opacity-60 backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/40"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-gray-500 to-gray-600"
-            >
-              <span class="text-xs font-bold text-white">+</span>
-            </div>
-            <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('home.providers.more') }}</span>
-            <span
-              class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-dark-700 dark:text-dark-400"
-              >{{ t('home.providers.soon') }}</span
-            >
-          </div>
-        </div>
+        <p
+          v-if="contactRevealed && contactInfo && !contactUrl"
+          class="mt-4 [overflow-wrap:anywhere] text-sm text-gray-600 dark:text-[#c9c4b6]"
+        >
+          {{ contactInfo }}
+        </p>
       </div>
     </main>
 
@@ -508,13 +378,23 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 
 // Site settings - directly from appStore (already initialized from injected config)
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Aphelion')
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const hasHomeContent = computed(() => homeContent.value.trim().length > 0)
 const compactHomeEnabled = computed(() => appStore.cachedPublicSettings?.compact_home_enabled === true)
+
+// Customer support contact, set by admins in site settings. It is free text
+// (e.g. "QQ: 123456789"), so only treat it as a link when it is a URL.
+const contactInfo = computed(() =>
+  (appStore.cachedPublicSettings?.contact_info || appStore.contactInfo || '').trim(),
+)
+const contactUrl = computed(() =>
+  /^https?:\/\//i.test(contactInfo.value) ? sanitizeUrl(contactInfo.value) : '',
+)
+const contactRevealed = ref(false)
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 
 // Check if homeContent is a URL (for iframe display)
@@ -581,21 +461,247 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   Aphelion theme: the far point of the orbit — deep space, a distant sun,
+   and a station that keeps running out here in the dark.
+   ========================================================================== */
+
+/* Starfield */
+.starfield {
+  position: absolute;
+  inset: -20%;
+  background-repeat: repeat;
+  opacity: 0.35;
+}
+
+.starfield--far {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(243, 241, 234, 0.45) 50%, transparent 50%),
+    radial-gradient(1px 1px at 70% 15%, rgba(214, 107, 77, 0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 45% 70%, rgba(243, 241, 234, 0.35) 50%, transparent 50%),
+    radial-gradient(1px 1px at 85% 60%, rgba(201, 162, 39, 0.3) 50%, transparent 50%);
+  background-size: 260px 260px;
+  animation: drift 180s linear infinite;
+}
+
+.starfield--near {
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 55%, rgba(243, 241, 234, 0.5) 50%, transparent 50%),
+    radial-gradient(1.6px 1.6px at 62% 40%, rgba(226, 216, 196, 0.45) 50%, transparent 50%),
+    radial-gradient(1.4px 1.4px at 88% 85%, rgba(214, 107, 77, 0.45) 50%, transparent 50%);
+  background-size: 420px 420px;
+  animation: drift 110s linear infinite reverse;
+}
+
+:global(.dark) .starfield {
+  opacity: 0.9;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-260px, 130px, 0);
+  }
+}
+
+/* The sun, seen from aphelion: small and cold */
+.distant-sun {
+  position: absolute;
+  top: -8rem;
+  left: -6rem;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 55% 55%,
+    rgba(243, 241, 234, 0.34) 0%,
+    rgba(214, 107, 77, 0.2) 28%,
+    rgba(214, 107, 77, 0.07) 55%,
+    transparent 72%
+  );
+  filter: blur(6px);
+  animation: sun-breathe 12s ease-in-out infinite;
+}
+
+:global(.dark) .distant-sun {
+  background: radial-gradient(
+    circle at 55% 55%,
+    rgba(243, 241, 234, 0.3) 0%,
+    rgba(214, 107, 77, 0.22) 26%,
+    rgba(120, 52, 33, 0.15) 52%,
+    transparent 72%
+  );
+}
+
+@keyframes sun-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+/* Faint orbital arcs across the whole sky */
+.sky-orbit {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(140, 132, 110, 0.16);
+}
+
+:global(.dark) .sky-orbit {
+  border-color: rgba(243, 241, 234, 0.1);
+}
+
+.sky-orbit--one {
+  top: -40%;
+  left: -25%;
+  width: 150%;
+  height: 130%;
+  transform: rotate(-12deg);
+}
+
+.sky-orbit--two {
+  top: -10%;
+  left: -5%;
+  width: 120%;
+  height: 160%;
+  transform: rotate(8deg);
+}
+
+/* Badge pip - a tiny body glinting in the dark */
+.aphelion-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #f3f1ea, #d66b4d);
+  box-shadow: 0 0 8px rgba(214, 107, 77, 0.75);
+  animation: pip-pulse 3s ease-in-out infinite;
+}
+
+@keyframes pip-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Orbit stage: the terminal sits at the far end of the ellipse */
+.orbit-stage {
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 560 / 420;
+}
+
+/* Card + caption stack, sized by the stage so the orbit never reflows it */
+.orbit-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.orbit-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbit-path {
+  fill: none;
+  stroke: rgba(120, 112, 94, 0.45);
+  stroke-width: 1.3;
+  stroke-dasharray: 5 7;
+}
+
+:global(.dark) .orbit-path {
+  stroke: rgba(243, 241, 234, 0.35);
+}
+
+.orbit-sun {
+  fill: #c96a4c;
+  filter: drop-shadow(0 0 10px rgba(214, 107, 77, 0.5));
+}
+
+:global(.dark) .orbit-sun {
+  fill: #f0ece0;
+  filter: drop-shadow(0 0 10px rgba(243, 241, 234, 0.85));
+}
+
+.orbit-planet {
+  fill: #d66b4d;
+  filter: drop-shadow(0 0 9px rgba(214, 107, 77, 0.85));
+}
+
+.orbit-apex {
+  fill: none;
+  stroke: rgba(214, 107, 77, 0.75);
+  stroke-width: 1.5;
+}
+
+.orbit-caption {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  white-space: nowrap;
+  font-family: ui-monospace, 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(122, 114, 98, 0.95);
+}
+
+:global(.dark) .orbit-caption {
+  color: rgba(214, 107, 77, 0.85);
+}
+
+@media (max-width: 480px) {
+  .orbit-caption {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield,
+  .distant-sun,
+  .aphelion-pip {
+    animation: none;
+  }
+}
+
 /* Terminal Container */
 .terminal-container {
   position: relative;
-  display: inline-block;
+  z-index: 2;
+  display: flex;
+  width: min(100%, 380px);
+  justify-content: center;
 }
 
 /* Terminal Window */
 .terminal-window {
-  width: 420px;
-  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  width: min(100%, 380px);
+  background: linear-gradient(145deg, #26261f 0%, #131410 100%);
   border-radius: 14px;
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 25px 50px -12px rgba(10, 10, 6, 0.5),
+    0 0 0 1px rgba(243, 241, 234, 0.14),
+    0 0 45px rgba(214, 107, 77, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
   transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
   transition: transform 0.3s ease;
@@ -610,8 +716,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(40, 39, 32, 0.85);
+  border-bottom: 1px solid rgba(243, 241, 234, 0.1);
 }
 
 .terminal-buttons {
@@ -640,7 +746,7 @@ onMounted(() => {
   text-align: center;
   font-size: 12px;
   font-family: ui-monospace, monospace;
-  color: #64748b;
+  color: #8f897b;
   margin-right: 52px;
 }
 
@@ -696,10 +802,10 @@ onMounted(() => {
   color: #a78bfa;
 }
 .code-url {
-  color: #14b8a6;
+  color: #e2b08a;
 }
 .code-comment {
-  color: #64748b;
+  color: #837d6d;
   font-style: italic;
 }
 .code-success {
@@ -710,7 +816,7 @@ onMounted(() => {
   font-weight: 600;
 }
 .code-response {
-  color: #fbbf24;
+  color: #e6c07b;
 }
 
 /* Blinking Cursor */
@@ -734,11 +840,11 @@ onMounted(() => {
 }
 
 /* Dark mode adjustments */
-:deep(.dark) .terminal-window {
+:global(.dark) .terminal-window {
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(20, 184, 166, 0.2),
-    0 0 40px rgba(20, 184, 166, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 25px 50px -12px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(243, 241, 234, 0.16),
+    0 0 55px rgba(214, 107, 77, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 </style>
