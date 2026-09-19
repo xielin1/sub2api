@@ -17,6 +17,12 @@ export default {
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
+    // 远日点主题文案
+    aphelion: {
+      badge: '远日点 · 轨道的最远处',
+      tagline: '离恒星最远，也依然稳稳沿轨运行 —— 每一次请求都能准时返航。',
+      orbitCaption: '此刻位于远日点 · 距日 1.521 亿公里'
+    },
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '会话保持',
