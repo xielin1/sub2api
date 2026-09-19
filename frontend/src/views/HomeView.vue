@@ -90,27 +90,29 @@
     </footer>
   </div>
 
-  <!-- Default Home Page -->
+  <!-- Default Home Page - Aphelion Theme -->
   <div
     v-else
-    class="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
+    class="aphelion relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-b from-[#eef1fa] via-[#f4f3fb] to-[#fdf5ec] dark:from-[#04060f] dark:via-[#080b1c] dark:to-[#100a18]"
   >
-    <!-- Background Decorations -->
+    <!-- Deep Space Backdrop -->
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <!-- Starfield -->
+      <div class="starfield starfield--far"></div>
+      <div class="starfield starfield--near"></div>
+      <!-- Distant sun: small, cold, far away -->
+      <div class="distant-sun"></div>
       <div
-        class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/20 blur-3xl"
+        class="absolute -bottom-52 -right-40 h-[32rem] w-[32rem] rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-500/20"
       ></div>
       <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary-500/15 blur-3xl"
+        class="absolute left-1/3 top-1/3 h-72 w-72 rounded-full bg-violet-400/10 blur-3xl dark:bg-violet-600/15"
       ></div>
+      <!-- Faint orbital arcs sweeping across the sky -->
+      <div class="sky-orbit sky-orbit--one"></div>
+      <div class="sky-orbit sky-orbit--two"></div>
       <div
-        class="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-primary-300/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-primary-400/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
+        class="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.035)_1px,transparent_1px)] bg-[size:72px_72px]"
       ></div>
     </div>
 
@@ -206,20 +208,30 @@
         <div class="mb-12 flex flex-col items-center justify-between gap-12 lg:flex-row lg:gap-16">
           <!-- Left: Text Content -->
           <div class="flex-1 text-center lg:text-left">
+            <!-- Aphelion badge -->
+            <div
+              class="mb-5 inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-white/70 px-3.5 py-1.5 text-xs font-medium tracking-wide text-amber-700 shadow-sm backdrop-blur-sm dark:border-amber-400/25 dark:bg-white/5 dark:text-amber-200"
+            >
+              <span class="aphelion-pip"></span>
+              {{ t('home.aphelion.badge') }}
+            </div>
             <h1
               class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
             >
               {{ siteName }}
             </h1>
-            <p class="mb-8 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
+            <p class="mb-4 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
               {{ siteSubtitle }}
+            </p>
+            <p class="mb-8 text-sm leading-relaxed text-gray-500 dark:text-dark-400">
+              {{ t('home.aphelion.tagline') }}
             </p>
 
             <!-- CTA Button -->
             <div>
               <router-link
                 :to="isAuthenticated ? dashboardPath : '/login'"
-                class="btn btn-primary px-8 py-3 text-base shadow-lg shadow-primary-500/30"
+                class="btn btn-primary px-8 py-3 text-base shadow-lg shadow-indigo-500/30"
               >
                 {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
                 <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
@@ -227,39 +239,69 @@
             </div>
           </div>
 
-          <!-- Right: Terminal Animation -->
+          <!-- Right: Orbit Scene with Terminal at Aphelion -->
           <div class="flex flex-1 justify-center lg:justify-end">
-            <div class="terminal-container">
-              <div class="terminal-window">
-                <!-- Window header -->
-                <div class="terminal-header">
-                  <div class="terminal-buttons">
-                    <span class="btn-close"></span>
-                    <span class="btn-minimize"></span>
-                    <span class="btn-maximize"></span>
+            <div class="orbit-stage">
+              <!-- Elliptical orbit: the sun sits at one focus, we sit at the far end -->
+              <svg class="orbit-svg" viewBox="0 0 560 460" aria-hidden="true" focusable="false">
+                <defs>
+                  <radialGradient id="aphelionSunGlow">
+                    <stop offset="0%" stop-color="#fde68a" stop-opacity="0.95" />
+                    <stop offset="45%" stop-color="#fb923c" stop-opacity="0.35" />
+                    <stop offset="100%" stop-color="#fb923c" stop-opacity="0" />
+                  </radialGradient>
+                </defs>
+                <g transform="rotate(-14 280 230)">
+                  <ellipse class="orbit-path" cx="280" cy="230" rx="250" ry="155" />
+                  <circle cx="86" cy="230" r="58" fill="url(#aphelionSunGlow)" />
+                  <circle class="orbit-sun" cx="86" cy="230" r="9" />
+                  <circle class="orbit-apex" cx="530" cy="230" r="4" />
+                  <circle class="orbit-planet" r="6">
+                    <animateMotion
+                      dur="24s"
+                      repeatCount="indefinite"
+                      path="M 530 230 A 250 155 0 1 1 30 230 A 250 155 0 1 1 530 230"
+                      keyPoints="0;1"
+                      keyTimes="0;1"
+                      calcMode="spline"
+                      keySplines="0.45 0 0.55 1"
+                    />
+                  </circle>
+                </g>
+              </svg>
+              <div class="terminal-container">
+                <div class="terminal-window">
+                  <!-- Window header -->
+                  <div class="terminal-header">
+                    <div class="terminal-buttons">
+                      <span class="btn-close"></span>
+                      <span class="btn-minimize"></span>
+                      <span class="btn-maximize"></span>
+                    </div>
+                    <span class="terminal-title">aphelion ~ terminal</span>
                   </div>
-                  <span class="terminal-title">terminal</span>
+                  <!-- Terminal content -->
+                  <div class="terminal-body">
+                    <div class="code-line line-1">
+                      <span class="code-prompt">$</span>
+                      <span class="code-cmd">curl</span>
+                      <span class="code-flag">-X POST</span>
+                      <span class="code-url">/v1/messages</span>
+                    </div>
+                    <div class="code-line line-2">
+                      <span class="code-comment"># Routing to upstream...</span>
+                    </div>
+                    <div class="code-line line-3">
+                      <span class="code-success">200 OK</span>
+                      <span class="code-response">{ "content": "Hello!" }</span>
+                    </div>
+                    <div class="code-line line-4">
+                      <span class="code-prompt">$</span>
+                      <span class="cursor"></span>
+                    </div>
+                  </div>
                 </div>
-                <!-- Terminal content -->
-                <div class="terminal-body">
-                  <div class="code-line line-1">
-                    <span class="code-prompt">$</span>
-                    <span class="code-cmd">curl</span>
-                    <span class="code-flag">-X POST</span>
-                    <span class="code-url">/v1/messages</span>
-                  </div>
-                  <div class="code-line line-2">
-                    <span class="code-comment"># Routing to upstream...</span>
-                  </div>
-                  <div class="code-line line-3">
-                    <span class="code-success">200 OK</span>
-                    <span class="code-response">{ "content": "Hello!" }</span>
-                  </div>
-                  <div class="code-line line-4">
-                    <span class="code-prompt">$</span>
-                    <span class="cursor"></span>
-                  </div>
-                </div>
+                <p class="orbit-caption">{{ t('home.aphelion.orbitCaption') }}</p>
               </div>
             </div>
           </div>
@@ -270,7 +312,7 @@
           <div
             class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
           >
-            <Icon name="swap" size="sm" class="text-primary-500" />
+            <Icon name="swap" size="sm" class="text-amber-500" />
             <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
               t('home.tags.subscriptionToApi')
             }}</span>
@@ -278,7 +320,7 @@
           <div
             class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
           >
-            <Icon name="shield" size="sm" class="text-primary-500" />
+            <Icon name="shield" size="sm" class="text-indigo-500 dark:text-indigo-400" />
             <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
               t('home.tags.stickySession')
             }}</span>
@@ -286,7 +328,7 @@
           <div
             class="inline-flex items-center gap-2.5 rounded-full border border-gray-200/50 bg-white/80 px-5 py-2.5 shadow-sm backdrop-blur-sm dark:border-dark-700/50 dark:bg-dark-800/80"
           >
-            <Icon name="chart" size="sm" class="text-primary-500" />
+            <Icon name="chart" size="sm" class="text-violet-500 dark:text-violet-400" />
             <span class="text-sm font-medium text-gray-700 dark:text-dark-200">{{
               t('home.tags.realtimeBilling')
             }}</span>
@@ -297,10 +339,10 @@
         <div class="mb-12 grid gap-6 md:grid-cols-3">
           <!-- Feature 1: Unified Gateway -->
           <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
+            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/20 dark:border-dark-700/50 dark:bg-dark-800/60"
           >
             <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 transition-transform group-hover:scale-110"
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30 transition-transform group-hover:scale-110"
             >
               <Icon name="server" size="lg" class="text-white" />
             </div>
@@ -314,10 +356,10 @@
 
           <!-- Feature 2: Account Pool -->
           <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
+            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/20 dark:border-dark-700/50 dark:bg-dark-800/60"
           >
             <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 transition-transform group-hover:scale-110"
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/30 transition-transform group-hover:scale-110"
             >
               <svg
                 class="h-6 w-6 text-white"
@@ -343,10 +385,10 @@
 
           <!-- Feature 3: Billing & Quota -->
           <div
-            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 dark:border-dark-700/50 dark:bg-dark-800/60"
+            class="group rounded-2xl border border-gray-200/50 bg-white/60 p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/20 dark:border-dark-700/50 dark:bg-dark-800/60"
           >
             <div
-              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30 transition-transform group-hover:scale-110"
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg shadow-violet-500/30 transition-transform group-hover:scale-110"
             >
               <svg
                 class="h-6 w-6 text-white"
@@ -581,21 +623,236 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   Aphelion theme: the far point of the orbit — deep space, a distant sun,
+   and a station that keeps running out here in the dark.
+   ========================================================================== */
+
+/* Starfield */
+.starfield {
+  position: absolute;
+  inset: -20%;
+  background-repeat: repeat;
+  opacity: 0.35;
+}
+
+.starfield--far {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(99, 102, 241, 0.55) 50%, transparent 50%),
+    radial-gradient(1px 1px at 70% 15%, rgba(148, 163, 184, 0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 45% 70%, rgba(129, 140, 248, 0.45) 50%, transparent 50%),
+    radial-gradient(1px 1px at 85% 60%, rgba(148, 163, 184, 0.4) 50%, transparent 50%);
+  background-size: 260px 260px;
+  animation: drift 180s linear infinite;
+}
+
+.starfield--near {
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 55%, rgba(253, 230, 138, 0.5) 50%, transparent 50%),
+    radial-gradient(1.6px 1.6px at 62% 40%, rgba(226, 232, 240, 0.5) 50%, transparent 50%),
+    radial-gradient(1.4px 1.4px at 88% 85%, rgba(196, 181, 253, 0.5) 50%, transparent 50%);
+  background-size: 420px 420px;
+  animation: drift 110s linear infinite reverse;
+}
+
+:global(.dark) .starfield {
+  opacity: 0.9;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-260px, 130px, 0);
+  }
+}
+
+/* The sun, seen from aphelion: small and cold */
+.distant-sun {
+  position: absolute;
+  top: -8rem;
+  left: -6rem;
+  width: 30rem;
+  height: 30rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 55% 55%,
+    rgba(253, 224, 71, 0.5) 0%,
+    rgba(251, 146, 60, 0.28) 28%,
+    rgba(251, 146, 60, 0.08) 55%,
+    transparent 72%
+  );
+  filter: blur(6px);
+  animation: sun-breathe 12s ease-in-out infinite;
+}
+
+:global(.dark) .distant-sun {
+  background: radial-gradient(
+    circle at 55% 55%,
+    rgba(253, 224, 71, 0.4) 0%,
+    rgba(249, 115, 22, 0.22) 26%,
+    rgba(124, 45, 18, 0.15) 52%,
+    transparent 72%
+  );
+}
+
+@keyframes sun-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+/* Faint orbital arcs across the whole sky */
+.sky-orbit {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+:global(.dark) .sky-orbit {
+  border-color: rgba(165, 180, 252, 0.12);
+}
+
+.sky-orbit--one {
+  top: -40%;
+  left: -25%;
+  width: 150%;
+  height: 130%;
+  transform: rotate(-12deg);
+}
+
+.sky-orbit--two {
+  top: -10%;
+  left: -5%;
+  width: 120%;
+  height: 160%;
+  transform: rotate(8deg);
+}
+
+/* Badge pip - a tiny body glinting in the dark */
+.aphelion-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #fef3c7, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+  animation: pip-pulse 3s ease-in-out infinite;
+}
+
+@keyframes pip-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Orbit stage: the terminal sits at the far end of the ellipse */
+.orbit-stage {
+  position: relative;
+  display: flex;
+  width: min(100%, 560px);
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 560 / 460;
+}
+
+.orbit-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbit-path {
+  fill: none;
+  stroke: rgba(99, 102, 241, 0.3);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 7;
+}
+
+:global(.dark) .orbit-path {
+  stroke: rgba(165, 180, 252, 0.35);
+}
+
+.orbit-sun {
+  fill: #fbbf24;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.9));
+}
+
+.orbit-planet {
+  fill: #c4b5fd;
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.9));
+}
+
+.orbit-apex {
+  fill: none;
+  stroke: rgba(245, 158, 11, 0.8);
+  stroke-width: 1.5;
+}
+
+.orbit-caption {
+  position: absolute;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-family: ui-monospace, 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(120, 113, 108, 0.9);
+}
+
+:global(.dark) .orbit-caption {
+  color: rgba(196, 181, 253, 0.75);
+}
+
+@media (max-width: 480px) {
+  .orbit-caption {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield,
+  .distant-sun,
+  .aphelion-pip {
+    animation: none;
+  }
+}
+
 /* Terminal Container */
 .terminal-container {
   position: relative;
-  display: inline-block;
+  z-index: 2;
+  display: flex;
+  width: min(100%, 380px);
+  justify-content: center;
 }
 
 /* Terminal Window */
 .terminal-window {
-  width: 420px;
-  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  width: min(100%, 380px);
+  background: linear-gradient(145deg, #1b1a38 0%, #0b0a1c 100%);
   border-radius: 14px;
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 25px 50px -12px rgba(2, 4, 16, 0.55),
+    0 0 0 1px rgba(196, 181, 253, 0.18),
+    0 0 45px rgba(99, 102, 241, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
   transform: perspective(1000px) rotateX(2deg) rotateY(-2deg);
   transition: transform 0.3s ease;
@@ -610,8 +867,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(30, 41, 59, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(30, 27, 62, 0.8);
+  border-bottom: 1px solid rgba(196, 181, 253, 0.12);
 }
 
 .terminal-buttons {
@@ -640,7 +897,7 @@ onMounted(() => {
   text-align: center;
   font-size: 12px;
   font-family: ui-monospace, monospace;
-  color: #64748b;
+  color: #8b83b8;
   margin-right: 52px;
 }
 
@@ -696,10 +953,10 @@ onMounted(() => {
   color: #a78bfa;
 }
 .code-url {
-  color: #14b8a6;
+  color: #a78bfa;
 }
 .code-comment {
-  color: #64748b;
+  color: #7c7699;
   font-style: italic;
 }
 .code-success {
@@ -710,7 +967,7 @@ onMounted(() => {
   font-weight: 600;
 }
 .code-response {
-  color: #fbbf24;
+  color: #fcd34d;
 }
 
 /* Blinking Cursor */
@@ -734,11 +991,11 @@ onMounted(() => {
 }
 
 /* Dark mode adjustments */
-:deep(.dark) .terminal-window {
+:global(.dark) .terminal-window {
   box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(20, 184, 166, 0.2),
-    0 0 40px rgba(20, 184, 166, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(196, 181, 253, 0.22),
+    0 0 55px rgba(99, 102, 241, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 </style>
