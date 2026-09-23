@@ -26,6 +26,22 @@ type CustomEndpoint struct {
 	Description string `json:"description"`
 }
 
+// ContactDialog 导航栏「联系我们」弹窗配置
+type ContactDialog struct {
+	Enabled         bool   `json:"enabled"`          // 是否在导航栏展示按钮
+	Title           string `json:"title"`            // 按钮文字与弹窗标题，如：联系我们
+	SectionTitle    string `json:"section_title"`    // 小节标题，如：官方交流群
+	SectionSubtitle string `json:"section_subtitle"` // 小节副标题
+	CardTitle       string `json:"card_title"`       // 卡片标题，如：QQ群
+	BadgeText       string `json:"badge_text"`       // 卡片右上角标记，如：可加入
+	QRCode          string `json:"qr_code"`          // 二维码图片（base64 data URL 或 http(s) 链接）
+	ScanTitle       string `json:"scan_title"`       // 二维码旁标题，如：手机 QQ 扫一扫
+	ScanHint        string `json:"scan_hint"`        // 二维码旁说明
+	GroupNumber     string `json:"group_number"`     // 群号，复制按钮复制该值
+	CopyButtonText  string `json:"copy_button_text"` // 复制按钮文字
+	FooterText      string `json:"footer_text"`      // 弹窗底部提示
+}
+
 // SystemSettings represents the admin settings API response payload.
 type SystemSettings struct {
 	RegistrationEnabled                 bool                     `json:"registration_enabled"`
@@ -164,6 +180,7 @@ type SystemSettings struct {
 	TablePageSizeOptions        []int            `json:"table_page_size_options"`
 	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             []CustomEndpoint `json:"custom_endpoints"`
+	ContactDialog               ContactDialog    `json:"contact_dialog"`
 
 	DefaultConcurrency           int                          `json:"default_concurrency"`
 	DefaultBalance               float64                      `json:"default_balance"`
@@ -396,6 +413,7 @@ type PublicSettings struct {
 	TablePageSizeOptions                []int                    `json:"table_page_size_options"`
 	CustomMenuItems                     []CustomMenuItem         `json:"custom_menu_items"`
 	CustomEndpoints                     []CustomEndpoint         `json:"custom_endpoints"`
+	ContactDialog                       ContactDialog            `json:"contact_dialog"`
 	DingTalkOAuthEnabled                bool                     `json:"dingtalk_oauth_enabled"`
 	LinuxDoOAuthEnabled                 bool                     `json:"linuxdo_oauth_enabled"`
 	WeChatOAuthEnabled                  bool                     `json:"wechat_oauth_enabled"`
@@ -608,6 +626,21 @@ func ParseUserVisibleMenuItems(raw string) []CustomMenuItem {
 		}
 	}
 	return filtered
+}
+
+// ParseContactDialog 将 JSON 字符串解析为联系我们弹窗配置，空值或非法内容返回零值（即未启用）
+func ParseContactDialog(raw string) ContactDialog {
+	// 1. 空值视为未配置
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "{}" {
+		return ContactDialog{}
+	}
+	// 2. 解析失败同样视为未配置
+	var dialog ContactDialog
+	if err := json.Unmarshal([]byte(raw), &dialog); err != nil {
+		return ContactDialog{}
+	}
+	return dialog
 }
 
 // ParseCustomEndpoints parses a JSON string into a slice of CustomEndpoint.

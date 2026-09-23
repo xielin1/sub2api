@@ -164,6 +164,7 @@ type SystemSettings struct {
 	TablePageSizeOptions        []int
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
+	ContactDialog               string // 联系我们弹窗配置（JSON 对象）
 
 	DefaultConcurrency           int
 	DefaultBalance               float64
@@ -363,6 +364,7 @@ type PublicSettings struct {
 	TablePageSizeOptions        []int
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
+	ContactDialog               string // 联系我们弹窗配置（JSON 对象）
 
 	LinuxDoOAuthEnabled      bool
 	DingTalkOAuthEnabled     bool

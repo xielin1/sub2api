@@ -168,6 +168,7 @@ type UpdateSettingsRequest struct {
 	TablePageSizeOptions        []int                 `json:"table_page_size_options"`
 	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             *[]dto.CustomEndpoint `json:"custom_endpoints"`
+	ContactDialog               *dto.ContactDialog    `json:"contact_dialog"`
 
 	// 默认配置
 	DefaultConcurrency                        int                               `json:"default_concurrency"`
@@ -1395,6 +1396,67 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		customEndpointsJSON = string(endpointBytes)
 	}
 
+	// 联系我们弹窗验证：未传则沿用旧值
+	const (
+		maxContactDialogTextLen = 200
+		maxContactDialogQRLen   = 500 * 1024 // base64 编码后约对应 370KB 图片
+	)
+
+	contactDialogJSON := previousSettings.ContactDialog
+	if req.ContactDialog != nil {
+		// 1. 去除首尾空白
+		dialog := *req.ContactDialog
+		dialog.Title = strings.TrimSpace(dialog.Title)
+		dialog.SectionTitle = strings.TrimSpace(dialog.SectionTitle)
+		dialog.SectionSubtitle = strings.TrimSpace(dialog.SectionSubtitle)
+		dialog.CardTitle = strings.TrimSpace(dialog.CardTitle)
+		dialog.BadgeText = strings.TrimSpace(dialog.BadgeText)
+		dialog.QRCode = strings.TrimSpace(dialog.QRCode)
+		dialog.ScanTitle = strings.TrimSpace(dialog.ScanTitle)
+		dialog.ScanHint = strings.TrimSpace(dialog.ScanHint)
+		dialog.GroupNumber = strings.TrimSpace(dialog.GroupNumber)
+		dialog.CopyButtonText = strings.TrimSpace(dialog.CopyButtonText)
+		dialog.FooterText = strings.TrimSpace(dialog.FooterText)
+
+		// 2. 启用时按钮文字必填，否则导航栏会出现空按钮
+		if dialog.Enabled && dialog.Title == "" {
+			response.BadRequest(c, "Contact dialog title is required when enabled")
+			return
+		}
+
+		// 3. 文本字段长度校验
+		texts := []string{
+			dialog.Title, dialog.SectionTitle, dialog.SectionSubtitle, dialog.CardTitle, dialog.BadgeText,
+			dialog.ScanTitle, dialog.ScanHint, dialog.GroupNumber, dialog.CopyButtonText, dialog.FooterText,
+		}
+		for _, text := range texts {
+			if len(text) > maxContactDialogTextLen {
+				response.BadRequest(c, "Contact dialog text is too long (max 200 characters)")
+				return
+			}
+		}
+
+		// 4. 二维码只接受图片 data URL 或 http(s) 链接
+		if dialog.QRCode != "" {
+			if len(dialog.QRCode) > maxContactDialogQRLen {
+				response.BadRequest(c, "Contact dialog QR code image is too large")
+				return
+			}
+			if !strings.HasPrefix(dialog.QRCode, "data:image/") && config.ValidateAbsoluteHTTPURL(dialog.QRCode) != nil {
+				response.BadRequest(c, "Contact dialog QR code must be an image or an absolute http(s) URL")
+				return
+			}
+		}
+
+		// 5. 序列化后落库
+		dialogBytes, err := json.Marshal(dialog)
+		if err != nil {
+			response.BadRequest(c, "Failed to serialize contact dialog")
+			return
+		}
+		contactDialogJSON = string(dialogBytes)
+	}
+
 	// Ops metrics collector interval validation (seconds).
 	if req.OpsMetricsIntervalSeconds != nil {
 		v := *req.OpsMetricsIntervalSeconds
@@ -1632,6 +1694,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		TablePageSizeOptions:                   req.TablePageSizeOptions,
 		CustomMenuItems:                        customMenuJSON,
 		CustomEndpoints:                        customEndpointsJSON,
+		ContactDialog:                          contactDialogJSON,
 		DefaultConcurrency:                     req.DefaultConcurrency,
 		DefaultBalance:                         req.DefaultBalance,
 		AffiliateRebateRate:                    affiliateRebateRate,
@@ -2272,6 +2335,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		TablePageSizeOptions:                                   updatedSettings.TablePageSizeOptions,
 		CustomMenuItems:                                        dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
 		CustomEndpoints:                                        dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
+		ContactDialog:                                          dto.ParseContactDialog(updatedSettings.ContactDialog),
 		DefaultConcurrency:                                     updatedSettings.DefaultConcurrency,
 		DefaultBalance:                                         updatedSettings.DefaultBalance,
 		AffiliateRebateRate:                                    updatedSettings.AffiliateRebateRate,

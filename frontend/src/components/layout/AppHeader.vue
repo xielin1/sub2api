@@ -38,6 +38,19 @@
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
         </a>
 
+        <!-- 联系我们：系统设置中开启后展示，点击弹窗 -->
+        <button
+          v-if="contactDialog?.enabled"
+          type="button"
+          :title="contactDialog.title"
+          :aria-label="contactDialog.title"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+          @click="contactDialogOpen = true"
+        >
+          <Icon name="chatBubble" size="sm" />
+          <span class="hidden sm:inline">{{ contactDialog.title }}</span>
+        </button>
+
         <!-- Model Plaza Entry (icon only below sm) -->
         <router-link
           v-if="user && modelPlazaEnabled"
@@ -230,6 +243,81 @@
         </div>
       </div>
     </div>
+
+    <!-- 联系我们弹窗 -->
+    <BaseDialog
+      v-if="contactDialog?.enabled"
+      :show="contactDialogOpen"
+      :title="contactDialog.title"
+      width="normal"
+      close-on-click-outside
+      @close="contactDialogOpen = false"
+    >
+      <div class="space-y-4">
+        <!-- 1. 小节标题 -->
+        <div v-if="contactDialog.section_title || contactDialog.section_subtitle" class="flex items-start gap-3">
+          <div class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+            <Icon name="chatBubble" size="md" />
+          </div>
+          <div>
+            <p v-if="contactDialog.section_title" class="font-semibold text-gray-900 dark:text-white">
+              {{ contactDialog.section_title }}
+            </p>
+            <p v-if="contactDialog.section_subtitle" class="mt-0.5 text-sm text-gray-500 dark:text-dark-400">
+              {{ contactDialog.section_subtitle }}
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. 群卡片 -->
+        <div class="rounded-2xl border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-800/60 dark:bg-primary-900/10">
+          <div v-if="contactDialog.card_title || contactDialog.badge_text" class="mb-3 flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ contactDialog.card_title }}</span>
+            <span v-if="contactDialog.badge_text" class="flex items-center gap-1.5 text-xs font-medium text-primary-700 dark:text-primary-400">
+              <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+              {{ contactDialog.badge_text }}
+            </span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl bg-white p-4 dark:bg-dark-800">
+            <img
+              v-if="contactQRCode"
+              :src="contactQRCode"
+              alt="QR code"
+              class="h-36 w-36 flex-none rounded-lg border border-gray-200 object-contain dark:border-dark-600"
+            />
+            <div class="min-w-0 space-y-1.5">
+              <p v-if="contactDialog.scan_title" class="font-semibold text-gray-900 dark:text-white">
+                {{ contactDialog.scan_title }}
+              </p>
+              <p v-if="contactDialog.scan_hint" class="text-sm text-gray-500 dark:text-dark-400">
+                {{ contactDialog.scan_hint }}
+              </p>
+              <p
+                v-if="contactDialog.group_number"
+                class="select-all pt-1 font-mono text-lg font-bold tracking-wide text-gray-900 [overflow-wrap:anywhere] dark:text-white"
+              >
+                {{ contactDialog.group_number }}
+              </p>
+            </div>
+          </div>
+          <!-- 3. 复制群号 -->
+          <button
+            v-if="contactDialog.group_number"
+            type="button"
+            class="btn btn-primary mt-4 w-full"
+            @click="copyToClipboard(contactDialog.group_number)"
+          >
+            <Icon :name="copied ? 'check' : 'copy'" size="sm" />
+            {{ contactDialog.copy_button_text || t('common.copy') }}
+          </button>
+        </div>
+
+        <!-- 4. 底部提示 -->
+        <p v-if="contactDialog.footer_text" class="text-sm text-gray-500 dark:text-dark-400">
+          {{ contactDialog.footer_text }}
+        </p>
+      </div>
+    </BaseDialog>
   </header>
 </template>
 
@@ -243,6 +331,8 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
 import Icon from '@/components/icons/Icon.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
+import { useClipboard } from '@/composables/useClipboard'
 import { sanitizeUrl } from '@/utils/url'
 import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 import { resolveRouteMetaKeys } from '@/router/title'
@@ -261,6 +351,11 @@ const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => sanitizeUrl(appStore.docUrl))
+// 联系我们弹窗：配置来自系统设置 contact_dialog
+const contactDialog = computed(() => appStore.cachedPublicSettings?.contact_dialog)
+const contactQRCode = computed(() => sanitizeUrl(contactDialog.value?.qr_code || '', { allowDataUrl: true }))
+const contactDialogOpen = ref(false)
+const { copied, copyToClipboard } = useClipboard()
 const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 const avatarUrl = computed(() => user.value?.avatar_url?.trim() || '')
 const availableBalance = computed(() => Number(user.value?.balance || 0))

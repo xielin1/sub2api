@@ -202,6 +202,22 @@ export interface CustomEndpoint {
   description: string
 }
 
+// 导航栏「联系我们」弹窗配置
+export interface ContactDialog {
+  enabled: boolean
+  title: string
+  section_title: string
+  section_subtitle: string
+  card_title: string
+  badge_text: string
+  qr_code: string
+  scan_title: string
+  scan_hint: string
+  group_number: string
+  copy_button_text: string
+  footer_text: string
+}
+
 export interface LoginAgreementDocument {
   id: string
   title: string
@@ -247,6 +263,7 @@ export interface PublicSettings {
   table_page_size_options: number[]
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
+  contact_dialog?: ContactDialog
   linuxdo_oauth_enabled: boolean
   dingtalk_oauth_enabled?: boolean
   wechat_oauth_enabled: boolean

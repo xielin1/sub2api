@@ -6530,6 +6530,149 @@
                 </p>
               </div>
 
+              <!-- 导航栏联系我们弹窗 -->
+              <div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">{{
+                      t("admin.settings.site.contactDialog.enabled")
+                    }}</label>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.enabledHint") }}
+                    </p>
+                  </div>
+                  <Toggle v-model="form.contact_dialog.enabled" />
+                </div>
+                <div
+                  v-if="form.contact_dialog.enabled"
+                  class="mt-3 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 p-4 dark:border-dark-600 sm:grid-cols-2"
+                >
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.title") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.title"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.titlePlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.sectionTitle") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.section_title"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.sectionTitlePlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.sectionSubtitle") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.section_subtitle"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.sectionSubtitlePlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.cardTitle") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.card_title"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.cardTitlePlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.badgeText") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.badge_text"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.badgeTextPlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.scanTitle") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.scan_title"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.scanTitlePlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.scanHint") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.scan_hint"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.scanHintPlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.groupNumber") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.group_number"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.groupNumberPlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.copyButtonText") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.copy_button_text"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.copyButtonTextPlaceholder')"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.footerText") }}
+                    </label>
+                    <input
+                      v-model="form.contact_dialog.footer_text"
+                      type="text"
+                      class="input text-sm"
+                      :placeholder="t('admin.settings.site.contactDialog.footerTextPlaceholder')"
+                    />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {{ t("admin.settings.site.contactDialog.qrCode") }}
+                    </label>
+                    <ImageUpload
+                      v-model="form.contact_dialog.qr_code"
+                      mode="image"
+                      :upload-label="t('admin.settings.site.uploadImage')"
+                      :remove-label="t('admin.settings.site.remove')"
+                      :hint="t('admin.settings.site.contactDialog.qrCodeHint')"
+                      :max-size="300 * 1024"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <!-- Doc URL -->
               <div>
                 <label
@@ -9674,6 +9817,21 @@ const form = reactive<SettingsForm>({
     endpoint: string;
     description: string;
   }>,
+  // 导航栏联系我们弹窗
+  contact_dialog: {
+    enabled: false,
+    title: "",
+    section_title: "",
+    section_subtitle: "",
+    card_title: "",
+    badge_text: "",
+    qr_code: "",
+    scan_title: "",
+    scan_hint: "",
+    group_number: "",
+    copy_button_text: "",
+    footer_text: "",
+  },
   frontend_url: "",
   smtp_host: "",
   smtp_port: 587,
@@ -11293,6 +11451,7 @@ async function saveSettings() {
       table_page_size_options: form.table_page_size_options,
       custom_menu_items: form.custom_menu_items,
       custom_endpoints: form.custom_endpoints,
+      contact_dialog: form.contact_dialog,
       frontend_url: form.frontend_url,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,
