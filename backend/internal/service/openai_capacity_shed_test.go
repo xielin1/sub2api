@@ -125,6 +125,10 @@ func TestOpenAIStreamErrorFrameDoesNotStartClientOutput(t *testing.T) {
 		{`{"type":"response.failed","response":{"error":{"code":"server_is_overloaded"}}}`, "response.failed", false},
 		{`{"type":"response.created","response":{"id":"resp_1"}}`, "response.created", false},
 		{`{"type":"response.in_progress","response":{"id":"resp_1"}}`, "response.in_progress", false},
+		// 1. CPR 的响应头和计时帧没有模型内容，不能提前关闭安全重试窗口。
+		{`{"type":"codex.response.metadata","headers":{"x-codex-turn-state":"opaque-state"}}`, "codex.response.metadata", false},
+		{`{"type":"response.metadata","headers":{"x-codex-turn-state":"opaque-state"}}`, "response.metadata", false},
+		{`{"type":"responsesapi.websocket_timing","timing":{}}`, "responsesapi.websocket_timing", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","summary":[]}}`, "response.output_item.added", false},
 		{`{"type":"response.output_item.added","item":{"type":"reasoning","encrypted_content":"ciphertext"}}`, "response.output_item.added", true},
 		{`{"type":"response.reasoning_summary_part.added","part":{"type":"summary_text","text":""}}`, "response.reasoning_summary_part.added", false},
@@ -139,9 +143,12 @@ func TestOpenAIStreamErrorFrameDoesNotStartClientOutput(t *testing.T) {
 }
 
 func TestOpenAIStreamMetadataPreambleAndMessageOnlyOverloadFailOver(t *testing.T) {
+	// 1. 按已保存的 CPR 样本补齐首帧，再复用现有 overload 序列离线验证。
 	gin.SetMode(gin.TestMode)
 	largeMetadata := strings.Repeat("x", 16*1024)
 	stream := strings.Join([]string{
+		`data: {"type":"codex.response.metadata","headers":{"x-codex-turn-state":"opaque-state"}}`,
+		"",
 		"event: response.created",
 		`data: {"type":"response.created","response":{"id":"resp_1","metadata":{"padding":"` + largeMetadata + `"}}}`,
 		"",
@@ -178,6 +185,7 @@ func TestOpenAIStreamMetadataPreambleAndMessageOnlyOverloadFailOver(t *testing.T
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// 2. 原生入口和 CPR 透传入口都必须在真实输出前保留故障转移能力。
 			svc := &OpenAIGatewayService{cfg: &config.Config{Gateway: config.GatewayConfig{MaxLineSize: defaultMaxLineSize}}}
 			rec := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rec)
@@ -188,6 +196,9 @@ func TestOpenAIStreamMetadataPreambleAndMessageOnlyOverloadFailOver(t *testing.T
 				Header:     http.Header{"X-Request-Id": []string{"rid-message-only-overload"}},
 			}
 			account := &Account{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Name: "acc"}
+			if tt.name == "passthrough" {
+				account.Type = AccountTypeCPR
+			}
 
 			err := tt.run(svc, c, resp, account)
 			require.Error(t, err)

@@ -1470,10 +1470,10 @@ func (s *OpenAIGatewayService) buildUpstreamRequest(ctx context.Context, c *gin.
 		}
 	}
 
-	// Whitelist passthrough headers
+	// 1. 按原白名单透传；CPR 额外保留会话关联头，由它完成上游身份处理。
 	for key, values := range c.Request.Header {
 		lowerKey := strings.ToLower(key)
-		if openaiAllowedHeaders[lowerKey] {
+		if openaiAllowedHeaders[lowerKey] || (account.IsCPR() && openaiCPRContextHeaders[lowerKey]) {
 			for _, v := range values {
 				req.Header.Add(key, v)
 			}

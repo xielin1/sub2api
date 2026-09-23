@@ -114,9 +114,21 @@ func startCPRAdminStub(t *testing.T, status int, payload string) (*httptest.Serv
 // --- 出站路径 ---
 
 func TestCPROutboundTargetsGatewayNotOpenAI(t *testing.T) {
+	// 1. CPR 负责上游身份，sub2api 必须保留客户端提供的会话关联字段。
 	account := newCPRTestAccount()
 	body := convTestBody(t)
 	c := newConvTestContext(t, body)
+	contextHeaders := map[string]string{
+		"session-id":               "client-session",
+		"thread-id":                "client-thread",
+		"conversation-id":          "client-conversation",
+		"x-client-request-id":      "client-request",
+		"x-codex-parent-thread-id": "parent-thread",
+		"x-codex-turn-id":          "client-turn",
+	}
+	for name, value := range contextHeaders {
+		c.Request.Header.Set(name, value)
+	}
 	svc := cprTestService()
 
 	req, err := svc.buildUpstreamRequest(context.Background(), c, account, body, cprTestClientKey, false, "", false)
@@ -135,6 +147,14 @@ func TestCPROutboundTargetsGatewayNotOpenAI(t *testing.T) {
 		"不得把出站 UA 强改成 Codex 身份——那是 CPR 的职责")
 	require.Empty(t, req.Header.Get("Content-Encoding"),
 		"zstd 压缩属于真上游形态，中继这一跳不做")
+	// 2. 两个 HTTP 构造入口都要透传，不能只修正文不转换的那一条路径。
+	passthrough, err := svc.buildUpstreamRequestOpenAIPassthrough(context.Background(), c, account, body, cprTestClientKey)
+	require.NoError(t, err)
+	for _, outbound := range []*http.Request{req, passthrough} {
+		for name, value := range contextHeaders {
+			require.Equal(t, value, outbound.Header.Get(name), name)
+		}
+	}
 }
 
 func TestCPRRequiresBaseURL(t *testing.T) {

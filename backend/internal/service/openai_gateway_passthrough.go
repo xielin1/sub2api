@@ -663,12 +663,12 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	}
 	req = req.WithContext(WithHTTPUpstreamProfile(req.Context(), HTTPUpstreamProfileOpenAI))
 
-	// 透传客户端请求头（安全白名单）。
+	// 1. 按安全白名单透传；CPR 的会话关联头与非透传入口使用同一份规则。
 	allowTimeoutHeaders := s.isOpenAIPassthroughTimeoutHeadersAllowed()
 	if c != nil && c.Request != nil {
 		for key, values := range c.Request.Header {
 			lower := strings.ToLower(strings.TrimSpace(key))
-			if !isOpenAIPassthroughAllowedRequestHeader(lower, allowTimeoutHeaders) {
+			if !isOpenAIPassthroughAllowedRequestHeader(lower, allowTimeoutHeaders) && !(account.IsCPR() && openaiCPRContextHeaders[lower]) {
 				continue
 			}
 			for _, v := range values {
@@ -1133,10 +1133,12 @@ func openAIStreamClientOutputStarted(c *gin.Context, localStarted bool) bool {
 }
 
 func openAIStreamEventIsPreamble(eventType string) bool {
+	// 1. 响应生命周期、CPR 响应头和计时帧都没有模型内容，先缓冲以保留安全重试窗口。
 	switch strings.TrimSpace(eventType) {
-	case "response.created", "response.in_progress":
+	case "response.created", "response.in_progress", "response.metadata", "codex.response.metadata", "responsesapi.websocket_timing":
 		return true
 	default:
+		// 2. 未知事件保持原有输出语义，避免重放已经交给客户端的内容或工具调用。
 		return false
 	}
 }

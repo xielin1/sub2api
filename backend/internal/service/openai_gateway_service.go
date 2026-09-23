@@ -119,6 +119,16 @@ var openaiPassthroughAllowedHeaders = map[string]bool{
 	responsesLiteHeaderKey:                  true,
 }
 
+// 1. CPR 不执行 sub2api 的身份收敛，两个 HTTP 入口都需原样保留它消费的会话关联头。
+var openaiCPRContextHeaders = map[string]bool{
+	"session-id":               true,
+	"thread-id":                true,
+	"conversation-id":          true,
+	"x-client-request-id":      true,
+	"x-codex-parent-thread-id": true,
+	"x-codex-turn-id":          true,
+}
+
 // codex_cli_only 拒绝时记录的请求头白名单（仅用于诊断日志，不参与上游透传）
 var codexCLIOnlyDebugHeaderWhitelist = []string{
 	"User-Agent",
