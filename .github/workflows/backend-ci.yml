@@ -2,13 +2,7 @@ name: CI
 
 on:
   push:
-    # main 只是 sync-upstream.yml 的 cron 宿主，每天 03:17 UTC 被重建成
-    # upstream/main + 那一个工作流文件。上面跑的是上游的代码不是 klno 的，
-    # 每天白跑一整轮 CI 没有意义。
-    #
-    # 只写 branches-ignore、不写 tags，等于 tag push 也不再触发：sync-upstream
-    # 推 klno 时已经对同一棵树跑过一模一样的 CI，紧接着推的 <tag>-klno.N 再跑
-    # 一遍只是让 release.yml 多等十几分钟。
+    # 1. mine 是开发分支，main 保留原有用途；标签发布由 release.yml 处理。
     branches-ignore:
       - main
     paths-ignore:
@@ -42,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Check Docker Compose simple mode environment
+        run: /bin/sh deploy/tests/docker-compose-simple-mode-env-test.sh
       - uses: actions/setup-go@v6
         with:
           go-version-file: backend/go.mod
@@ -97,3 +93,14 @@ jobs:
           version: v2.13
           args: --timeout=30m
           working-directory: backend
+
+  release-helpers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r .github/release-tools/requirements-release.txt
+      - run: python -m unittest discover -s .github/release-tools -p 'test_release_matrix.py'
+      - run: bash -n .github/release-tools/release-images.sh

@@ -12,10 +12,10 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-// rewriteCodexTurnMetadataJSON replaces only selected top-level identity values.
-// The header and the opaque client_metadata string must retain the caller's key
-// order, whitespace, Unicode escapes and unknown values. Never marshal the object.
+// rewriteCodexTurnMetadataJSON 仅改写顶层身份字段，保留键序、数值精度和已有转义。
+// 原始 Unicode 字符转成 JSON 转义，确保同一份 metadata 可安全用于 HTTP 请求头。
 func rewriteCodexTurnMetadataJSON(raw string, rebuildInvalid bool, updates func(map[string]any) map[string]any) string {
+	// 1. 校验外部 metadata；按调用方约定保留非法输入或重建最小对象。
 	original := raw
 	var metadata map[string]any
 	decoder := json.NewDecoder(strings.NewReader(raw))
@@ -26,6 +26,7 @@ func rewriteCodexTurnMetadataJSON(raw string, rebuildInvalid bool, updates func(
 		}
 		raw, metadata = "{}", map[string]any{}
 	}
+	// 2. 只编码需要改写的字段，不重新序列化整个对象。
 	fields := updates(metadata)
 	encoded := make(map[string]string, len(fields))
 	for name, value := range fields {
@@ -45,12 +46,11 @@ func rewriteCodexTurnMetadataJSON(raw string, rebuildInvalid bool, updates func(
 			return true
 		}
 		seen[name] = true
-		// Preserve an already-correct string's original escape spelling.
+		// 3. 已相等的字符串保留原有转义写法。
 		if text, ok := fields[name].(string); ok && value.Type == gjson.String && value.Str == text {
 			return true
 		}
-		// Visit all duplicates, not just the first match returned by Get/Set.
-		// Identity derivation still uses encoding/json's last-value-wins rule.
+		// 4. 覆盖全部同名字段，身份派生仍以最后一个字段值为准。
 		out = append(out, raw[offset:value.Index]...)
 		out = append(out, next...)
 		offset = value.Index + len(value.Raw)
@@ -58,7 +58,7 @@ func rewriteCodexTurnMetadataJSON(raw string, rebuildInvalid bool, updates func(
 	})
 	out = append(out, raw[offset:]...)
 	next := string(out)
-	// Only absent identity fields are appended; existing fields never move.
+	// 5. 仅追加原对象缺少的身份字段，不移动已有字段。
 	for _, name := range slices.Sorted(maps.Keys(encoded)) {
 		if seen[name] {
 			continue
@@ -69,20 +69,26 @@ func rewriteCodexTurnMetadataJSON(raw string, rebuildInvalid bool, updates func(
 			return original
 		}
 	}
-	return next
+	// 6. 转义 HTTP 请求头不能携带的字符，保留其他字节及未知字段。
+	return escapeCodexTurnMetadataUnicode(next)
 }
 
-// New scalar values follow Codex's ASCII JSON spelling, without HTML escaping.
-// Existing metadata text is deliberately not normalized through this encoder.
+// marshalCodexTurnMetadataValue 将新值编码成 ASCII JSON，并保留 HTML 字符。
 func marshalCodexTurnMetadataValue(value any) (string, error) {
+	// 1. 复用出站编码器，再与完整 metadata 共用字符转义规则。
 	raw, err := marshalOpenAIUpstreamJSON(value)
 	if err != nil {
 		return "", err
 	}
+	return escapeCodexTurnMetadataUnicode(string(raw)), nil
+}
+
+func escapeCodexTurnMetadataUnicode(raw string) string {
+	// 1. 只替换原始 Unicode 和 DEL；已有 JSON 转义、空白和数值写法均保持不变。
 	out := make([]byte, 0, len(raw))
-	for _, r := range string(raw) {
+	for _, r := range raw {
 		switch {
-		case r < 0x80:
+		case r < 0x7f:
 			out = append(out, byte(r))
 		case r <= 0xffff:
 			out = fmt.Appendf(out, `\u%04x`, r)
@@ -91,5 +97,5 @@ func marshalCodexTurnMetadataValue(value any) (string, error) {
 			out = fmt.Appendf(out, `\u%04x\u%04x`, high, low)
 		}
 	}
-	return string(out), nil
+	return string(out)
 }

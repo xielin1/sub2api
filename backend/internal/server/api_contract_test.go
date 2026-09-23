@@ -824,6 +824,7 @@ func TestAPIContracts(t *testing.T) {
 						"api_key_acl_trust_forwarded_ip": false,
 					"forwarded_client_ip_headers": [],
 					"contact_info": "support",
+					"contact_dialog": {"enabled":false,"title":"","badge_text":"","section_title":"","section_subtitle":"","card_title":"","group_number":"","copy_button_text":"","qr_code":"","scan_title":"","scan_hint":"","footer_text":""},
 					"doc_url": "https://docs.example.com",
 					"auth_source_default_email_balance": 0,
 					"auth_source_default_email_concurrency": 5,
@@ -953,6 +954,9 @@ func TestAPIContracts(t *testing.T) {
 					"openai_codex_client_version":       "",
 					"openai_codex_client_version_synced": "",
 					"openai_codex_version_auto_sync_enabled": true,
+					"claude_code_client_version": "",
+					"claude_code_client_version_synced": "",
+					"claude_code_version_auto_sync_enabled": true,
 					"openai_fast_policy_settings": {
 						"rules": []
 					},
@@ -1172,6 +1176,7 @@ func TestAPIContracts(t *testing.T) {
 					"api_key_acl_trust_forwarded_ip": false,
 					"forwarded_client_ip_headers": [],
 					"contact_info": "",
+					"contact_dialog": {"enabled":false,"title":"","badge_text":"","section_title":"","section_subtitle":"","card_title":"","group_number":"","copy_button_text":"","qr_code":"","scan_title":"","scan_hint":"","footer_text":""},
 					"doc_url": "",
 					"home_content": "",
 					"hide_ccs_import_button": false,
@@ -1270,6 +1275,9 @@ func TestAPIContracts(t *testing.T) {
 					"openai_codex_client_version":       "",
 					"openai_codex_client_version_synced": "",
 					"openai_codex_version_auto_sync_enabled": true,
+					"claude_code_client_version": "",
+					"claude_code_client_version_synced": "",
+					"claude_code_version_auto_sync_enabled": true,
 					"openai_fast_policy_settings": {
 						"rules": []
 					},

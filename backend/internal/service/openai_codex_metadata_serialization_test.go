@@ -21,7 +21,9 @@ func metadataSerializationFixture() string {
 
 func requireMetadataSerializationPreserved(t *testing.T, raw string) {
 	t.Helper()
-	require.True(t, strings.HasPrefix(raw, `{ `+metadataSerializationUnknown+`, `), raw)
+	// 1. 未知字段保持原有排版与精度，原始 Unicode 仅改为头部安全的 JSON 转义。
+	want := strings.ReplaceAll(metadataSerializationUnknown, "中文😀", `\u4e2d\u6587\ud83d\ude00`)
+	require.True(t, strings.HasPrefix(raw, `{ `+want+`, `), raw)
 	require.Less(t, strings.Index(raw, `"installation_id"`), strings.Index(raw, `"session_id"`), raw)
 	require.Less(t, strings.Index(raw, `"window_id"`), strings.Index(raw, `"context_window_id"`), raw)
 }
@@ -37,6 +39,8 @@ func TestCodexMetadataSerializationNamespace(t *testing.T) {
 			if enabled {
 				want = strings.Replace(want, `"root_turn_id":"turn"`, `"root_turn_id":"`+scopeCodexAccountIdentityValue(account, 77, "turn", "turn")+`"`, 1)
 			}
+			// 1. 身份重写同时保证头部安全，其他序列化细节继续逐字节核对。
+			want = strings.ReplaceAll(want, "中文😀", `\u4e2d\u6587\ud83d\ude00`)
 			h := make(http.Header)
 			h.Set(openAIWSTurnMetadataHeader, raw)
 			applyCodexAccountIdentityHeaders(h, account, 77)
@@ -65,6 +69,8 @@ func TestCodexMetadataSerializationFingerprint(t *testing.T) {
 						`"window_number":1`, `"window_number":2`, `"turn_started_at_unix_ms":12`, `"turn_started_at_unix_ms":1234`).Replace(want)
 				}
 				h := make(http.Header)
+				// 1. 保留字段顺序和数值字面量，仅转义原始 Unicode。
+				want = strings.ReplaceAll(want, "中文😀", `\u4e2d\u6587\ud83d\ude00`)
 				h.Set(openAIWSTurnMetadataHeader, raw)
 				applyCodexFingerprintHeaders(h, ids)
 				require.Equal(t, want, h.Get(openAIWSTurnMetadataHeader))

@@ -362,11 +362,8 @@ func (s *AccountUsageService) getUsageForAccount(ctx context.Context, account *A
 	// CPR 中继与 OAuth 共用 getOpenAIUsage：它们的展示口径（codex_5h_* / codex_7d_*）
 	// 完全相同，只是数据源一个是 /wham/usage、一个是 CPR 的 admin API。
 	if account.Platform == PlatformOpenAI && (account.Type == AccountTypeOAuth || account.IsCPR()) {
-		usage, err := s.getOpenAIUsage(ctx, account, forceProbe)
-		if err == nil {
-			s.tryClearRecoverableAccountError(ctx, account)
-		}
-		return usage, err
+		// 1. 额度可能来自缓存；查询成功不能证明已失效的刷新令牌恢复，因此保留账号错误。
+		return s.getOpenAIUsage(ctx, account, forceProbe)
 	}
 
 	if account.Platform == PlatformGemini {
