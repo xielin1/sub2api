@@ -34,6 +34,23 @@ func (h *SettingHandler) SetNotificationEmailService(notificationEmailService *s
 	h.notificationEmailService = notificationEmailService
 }
 
+// GetSalesRecruitment 获取登录后可见的销售招募内容。
+func (h *SettingHandler) GetSalesRecruitment(c *gin.Context) {
+	// 1. 路由层复用用户 JWT 鉴权；服务层只读独立的招募设置。
+	raw, err := h.settingService.GetSalesRecruitment(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	// 2. 关闭时不向用户返回文案和微信配置，管理员仍可在系统设置编辑。
+	recruitment := dto.ParseSalesRecruitment(raw)
+	if recruitment == nil || !recruitment.Enabled {
+		response.Success(c, nil)
+		return
+	}
+	response.Success(c, recruitment)
+}
+
 // GetPublicSettings 获取公开设置
 // GET /api/v1/settings/public
 func (h *SettingHandler) GetPublicSettings(c *gin.Context) {

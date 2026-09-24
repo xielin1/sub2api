@@ -169,6 +169,7 @@ type UpdateSettingsRequest struct {
 	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             *[]dto.CustomEndpoint `json:"custom_endpoints"`
 	ContactDialog               *dto.ContactDialog    `json:"contact_dialog"`
+	SalesRecruitment            *dto.SalesRecruitment `json:"sales_recruitment"` // 1. 未传时保留已有招募配置。
 
 	// 默认配置
 	DefaultConcurrency                        int                               `json:"default_concurrency"`
@@ -1459,6 +1460,22 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		contactDialogJSON = string(dialogBytes)
 	}
 
+	// 1. 招募配置省略时保留原值；显式提交则校验后整体覆盖。
+	salesRecruitmentJSON := previousSettings.SalesRecruitment
+	if req.SalesRecruitment != nil {
+		if err := validateSalesRecruitment(req.SalesRecruitment); err != nil {
+			response.BadRequest(c, err.Error())
+			return
+		}
+		// 2. 与其余系统设置在同一次写入中保存。
+		recruitmentBytes, err := json.Marshal(req.SalesRecruitment)
+		if err != nil {
+			response.BadRequest(c, "Failed to serialize sales recruitment")
+			return
+		}
+		salesRecruitmentJSON = string(recruitmentBytes)
+	}
+
 	// Ops metrics collector interval validation (seconds).
 	if req.OpsMetricsIntervalSeconds != nil {
 		v := *req.OpsMetricsIntervalSeconds
@@ -1706,6 +1723,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		CustomMenuItems:                        customMenuJSON,
 		CustomEndpoints:                        customEndpointsJSON,
 		ContactDialog:                          contactDialogJSON,
+		SalesRecruitment:                       salesRecruitmentJSON,
 		DefaultConcurrency:                     req.DefaultConcurrency,
 		DefaultBalance:                         req.DefaultBalance,
 		AffiliateRebateRate:                    affiliateRebateRate,
@@ -2362,6 +2380,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		CustomMenuItems:                                        dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
 		CustomEndpoints:                                        dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
 		ContactDialog:                                          dto.ParseContactDialog(updatedSettings.ContactDialog),
+		SalesRecruitment:                                       dto.ParseSalesRecruitment(updatedSettings.SalesRecruitment),
 		DefaultConcurrency:                                     updatedSettings.DefaultConcurrency,
 		DefaultBalance:                                         updatedSettings.DefaultBalance,
 		AffiliateRebateRate:                                    updatedSettings.AffiliateRebateRate,

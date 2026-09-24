@@ -6845,6 +6845,9 @@
                 />
               </div>
 
+              <!-- 1. 销售招募首页内容与其他站点配置一同保存，并提供本地预览。 -->
+              <SalesRecruitmentEditor v-model="form.sales_recruitment" />
+
               <!-- Home Content -->
               <div>
                 <label
@@ -9130,6 +9133,7 @@ import type {
 } from "@/api/admin/settings";
 import type {
   AdminGroup,
+  SalesRecruitment,
   LoginAgreementDocument,
   NotifyEmailEntry,
   Proxy,
@@ -9153,6 +9157,7 @@ import GroupOptionItem from "@/components/common/GroupOptionItem.vue";
 import Toggle from "@/components/common/Toggle.vue";
 import ProxySelector from "@/components/common/ProxySelector.vue";
 import ImageUpload from "@/components/common/ImageUpload.vue";
+import SalesRecruitmentEditor from "@/views/admin/settings/SalesRecruitmentEditor.vue";
 import BackupSettings from "@/views/admin/BackupView.vue";
 import EmailTemplateEditor from "@/views/admin/settings/EmailTemplateEditor.vue";
 import OpenAIFastPolicyUserSelector from "@/views/admin/settings/OpenAIFastPolicyUserSelector.vue";
@@ -9831,7 +9836,10 @@ type SettingsForm = Omit<
   | "wechat_connect_mp_enabled"
   | "wechat_connect_mobile_enabled"
   | "openai_oauth_scheduling_rate_multiplier"
+  | "sales_recruitment"
 > & {
+  // 1. 老站未配置时保留本地关闭模板，编辑器始终绑定完整草稿。
+  sales_recruitment: SalesRecruitment;
   /** Form always binds a concrete boolean (SystemSettings marks this optional). */
   channel_monitor_hide_throughput: boolean;
   channel_monitor_show_quota: boolean;
@@ -9915,6 +9923,32 @@ const form = reactive<SettingsForm>({
   site_logo: "",
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",
+  // 1. 提供可编辑示例，保持关闭，站长填写自己的微信并确认规则后再发布。
+  sales_recruitment: {
+    enabled: false,
+    floating_enabled: true,
+    title: "招募销售伙伴",
+    subtitle: "带客户来，现金佣金持续拿",
+    badge: "成为我们的销售伙伴",
+    button_text: "立即加入",
+    intro: "把优质 AI 服务推荐给需要的人。你负责连接客户，我们提供产品与接入支持，一起把合作做长久。",
+    hero_image: "",
+    tiers: [
+      { label: "月业绩 ≥ ¥3000", rate: "15%" },
+      { label: "¥1000 ≤ 月业绩 < ¥3000", rate: "10%" },
+      { label: "月业绩 < ¥1000", rate: "5%" },
+    ],
+    benefits: [
+      { title: "产品支持", description: "提供产品介绍与接入协助" },
+      { title: "长期合作", description: "持续服务客户，共同拓展业务" },
+      { title: "结算透明", description: "业绩可核对，按约定结算" },
+    ],
+    rules: "01 业绩如何计算\n按销售伙伴名下客户当月实际购买金额，减去成功退款后合计。赠送额度和支付手续费不计入业绩。\n\n02 佣金比例\n月业绩低于 ¥1000 按 5%，达到 ¥1000 且低于 ¥3000 按 10%，达到 ¥3000 按 15% 计算。\n\n03 现金结算\n每月核对上月有效业绩，确认退款与异常后，按双方约定方式结算。\n\n04 大客户支持\n大额客户可联系负责人协商报价与成交支持。具体合作条件以双方确认的约定为准。",
+    wechat_id: "",
+    wechat_qr_code: "",
+    contact_note: "添加时请备注“销售伙伴”，方便我们确认来意并沟通合作方式。",
+    footer: "现金佣金计划与站内邀请返利独立，具体结算以双方约定为准。",
+  },
   contact_info: "",
   doc_url: "",
   home_content: "",
@@ -11624,6 +11658,8 @@ async function saveSettings() {
       custom_menu_items: form.custom_menu_items,
       custom_endpoints: form.custom_endpoints,
       contact_dialog: form.contact_dialog,
+      // 1. 复用系统设置更新和配置刷新，一次保存全部招募内容。
+      sales_recruitment: form.sales_recruitment,
       frontend_url: form.frontend_url,
       smtp_host: form.smtp_host,
       smtp_port: form.smtp_port,

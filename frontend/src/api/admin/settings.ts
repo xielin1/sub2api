@@ -6,6 +6,7 @@
 import { apiClient } from "../client";
 import type {
   ContactDialog,
+  SalesRecruitment,
   CustomEndpoint,
   CustomMenuItem,
   LoginAgreementDocument,
@@ -492,6 +493,7 @@ export interface SystemSettings {
   custom_menu_items: CustomMenuItem[];
   custom_endpoints: CustomEndpoint[];
   contact_dialog: ContactDialog;
+  sales_recruitment?: SalesRecruitment | null;
   // SMTP settings
   smtp_host: string;
   smtp_port: number;
@@ -841,6 +843,7 @@ export interface UpdateSettingsRequest {
   custom_menu_items?: CustomMenuItem[];
   custom_endpoints?: CustomEndpoint[];
   contact_dialog?: ContactDialog;
+  sales_recruitment?: SalesRecruitment;
   smtp_host?: string;
   smtp_port?: number;
   smtp_username?: string;

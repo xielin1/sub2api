@@ -449,6 +449,10 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.CustomEndpoints != after.CustomEndpoints {
 		changed = append(changed, "custom_endpoints")
 	}
+	// 1. 使用现有设置审计记录招募配置变更。
+	if before.SalesRecruitment != after.SalesRecruitment {
+		changed = append(changed, "sales_recruitment")
+	}
 	if before.ContactDialog != after.ContactDialog {
 		changed = append(changed, "contact_dialog")
 	}

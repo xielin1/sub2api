@@ -42,6 +42,51 @@ type ContactDialog struct {
 	FooterText      string `json:"footer_text"`      // 弹窗底部提示
 }
 
+// SalesRecruitment 销售招募展示配置；现金佣金由双方约定结算，不修改邀请返利。
+type SalesRecruitment struct {
+	Enabled         bool                      `json:"enabled"`
+	FloatingEnabled bool                      `json:"floating_enabled"`
+	Title           string                    `json:"title"`
+	Subtitle        string                    `json:"subtitle"`
+	Badge           string                    `json:"badge"`
+	ButtonText      string                    `json:"button_text"`
+	Intro           string                    `json:"intro"`
+	HeroImage       string                    `json:"hero_image"`
+	Tiers           []SalesRecruitmentTier    `json:"tiers"`
+	Benefits        []SalesRecruitmentBenefit `json:"benefits"`
+	Rules           string                    `json:"rules"`
+	WechatID        string                    `json:"wechat_id"`
+	WechatQRCode    string                    `json:"wechat_qr_code"`
+	ContactNote     string                    `json:"contact_note"`
+	Footer          string                    `json:"footer"`
+}
+
+// SalesRecruitmentTier 仅展示管理员填写的业绩档位与佣金，不参与计费。
+type SalesRecruitmentTier struct {
+	Label string `json:"label"`
+	Rate  string `json:"rate"`
+}
+
+// SalesRecruitmentBenefit 展示可编辑的合作权益。
+type SalesRecruitmentBenefit struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+// ParseSalesRecruitment 沿用站点 JSON 配置的读取方式；老站未配置时不展示入口。
+func ParseSalesRecruitment(raw string) *SalesRecruitment {
+	// 1. 未配置是正常状态，保持前端的未启用状态。
+	if strings.TrimSpace(raw) == "" || strings.TrimSpace(raw) == "{}" {
+		return nil
+	}
+	// 2. 历史损坏配置不发布给访客；新配置由管理员接口统一校验。
+	var recruitment SalesRecruitment
+	if err := json.Unmarshal([]byte(raw), &recruitment); err != nil {
+		return nil
+	}
+	return &recruitment
+}
+
 // SystemSettings represents the admin settings API response payload.
 type SystemSettings struct {
 	RegistrationEnabled                 bool                     `json:"registration_enabled"`
@@ -181,6 +226,9 @@ type SystemSettings struct {
 	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
 	CustomEndpoints             []CustomEndpoint `json:"custom_endpoints"`
 	ContactDialog               ContactDialog    `json:"contact_dialog"`
+
+	// 1. 招募内容与客服弹窗独立配置。
+	SalesRecruitment *SalesRecruitment `json:"sales_recruitment"`
 
 	DefaultConcurrency           int                          `json:"default_concurrency"`
 	DefaultBalance               float64                      `json:"default_balance"`

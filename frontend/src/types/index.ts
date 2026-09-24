@@ -218,6 +218,25 @@ export interface ContactDialog {
   footer_text: string
 }
 
+// 1. 销售招募仅管理展示内容，沿用独立的站点设置 JSON。
+export interface SalesRecruitment {
+  enabled: boolean
+  floating_enabled: boolean
+  title: string
+  subtitle: string
+  badge: string
+  button_text: string
+  intro: string
+  hero_image: string
+  tiers: { label: string; rate: string }[]
+  benefits: { title: string; description: string }[]
+  rules: string
+  wechat_id: string
+  wechat_qr_code: string
+  contact_note: string
+  footer: string
+}
+
 export interface LoginAgreementDocument {
   id: string
   title: string

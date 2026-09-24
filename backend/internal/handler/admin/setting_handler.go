@@ -262,6 +262,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		CustomMenuItems:                                        dto.ParseCustomMenuItems(settings.CustomMenuItems),
 		CustomEndpoints:                                        dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		ContactDialog:                                          dto.ParseContactDialog(settings.ContactDialog),
+		SalesRecruitment:                                       dto.ParseSalesRecruitment(settings.SalesRecruitment),
 		DefaultConcurrency:                                     settings.DefaultConcurrency,
 		DefaultBalance:                                         settings.DefaultBalance,
 		RiskControlEnabled:                                     settings.RiskControlEnabled,

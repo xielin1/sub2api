@@ -1,0 +1,5 @@
+Use case: ads-marketing. Create an original premium 3D illustration for an AI API gateway sales partner recruitment website. A friendly small ivory and cobalt-blue robot presenting a luminous golden connection ring, three floating translucent blue API node cubes connected in an ascending arc, subtle gold coin discs without currency signs. Optimistic collaborative business growth. Warm pale butter-yellow studio background, refined soft shadows, polished matte ceramic and translucent glass materials, editorial SaaS product quality. Square composition, central compact subject fully inside generous margins, balanced and legible when small. No text, no letters, no numbers, no logo, no watermark, no QR code, no imitation of existing mascots.
+
+Generated using the existing site API: /v1/images/generations
+Model requested: gpt-image-2
+Size requested: 1024x1024; quality: high; n: 1.
