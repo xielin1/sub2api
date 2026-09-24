@@ -8,12 +8,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"time"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
@@ -24,6 +26,41 @@ type AsyncImageHandler struct {
 	tasks   *service.ImageTaskService
 	openAI  *OpenAIGatewayHandler
 	execute func(platform string, c *gin.Context)
+}
+
+// WorkspaceConfig 1. 向已登录用户返回实际启用状态，不暴露对象存储凭证。
+func (h *AsyncImageHandler) WorkspaceConfig(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	response.Success(c, gin.H{"async_enabled": h.enabled()})
+}
+
+// Content 1. 按原任务密钥校验归属；2. 下载任务内图片，避免浏览器跨域限制。
+func (h *AsyncImageHandler) Content(c *gin.Context) {
+	apiKey, ok := middleware2.GetAPIKeyFromContext(c)
+	if !ok || apiKey == nil {
+		imageTaskError(c, service.ErrImageTaskForbidden)
+		return
+	}
+	index, err := strconv.Atoi(c.Param("index"))
+	if err != nil || index < 0 {
+		imageTaskJSONError(c, http.StatusBadRequest, "invalid_request_error", "invalid image index")
+		return
+	}
+	if !h.pollable() {
+		imageTaskError(c, service.ErrImageTaskUnavailable)
+		return
+	}
+	data, contentType, err := h.tasks.ImageContent(c.Request.Context(), service.ImageTaskOwner{UserID: apiKey.UserID, APIKeyID: apiKey.ID}, c.Param("task_id"), index)
+	if err != nil {
+		imageTaskError(c, err)
+		return
+	}
+	// 3. 只允许图片附件输出，不让上游内容在站点来源内作为页面执行。
+	c.Header("Cache-Control", "no-store")
+	c.Header("X-Content-Type-Options", "nosniff")
+	extension := map[string]string{"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}[contentType]
+	c.Header("Content-Disposition", `attachment; filename="image-`+strconv.Itoa(index+1)+`.`+extension+`"`)
+	c.Data(http.StatusOK, contentType, data)
 }
 
 func NewAsyncImageHandler(tasks *service.ImageTaskService, openAI *OpenAIGatewayHandler) *AsyncImageHandler {

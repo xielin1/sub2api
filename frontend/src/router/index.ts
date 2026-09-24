@@ -215,6 +215,19 @@ const routes: RouteRecordRaw[] = [
       descriptionKey: 'keys.description'
     }
   },
+  // 1. 图片工作台复用用户鉴权与页面布局。
+  {
+    path: '/image-workspace',
+    name: 'ImageWorkspace',
+    component: () => import('@/views/user/ImageWorkspaceView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Image Workspace',
+      titleKey: 'imageWorkspace.title',
+      descriptionKey: 'imageWorkspace.description'
+    }
+  },
   {
     path: '/batch-image',
     name: 'BatchImageGuide',

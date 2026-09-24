@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,55 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+// TestAsyncImageWorkspaceContent 1. 验证下载成功；2. 验证越权和非法索引不能读取图片。
+func TestAsyncImageWorkspaceContent(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	store := &asyncImageMemoryStore{tasks: make(map[string]*service.ImageTaskRecord)}
+	tasks := service.NewImageTaskServiceWithUploader(store, nil, time.Hour, time.Minute)
+	owner := service.ImageTaskOwner{UserID: 7, APIKeyID: 9}
+	task, err := tasks.Create(context.Background(), owner)
+	require.NoError(t, err)
+	// 1. 位图签名用于验证下载原始字节，不依赖外网或对象存储。
+	png := []byte("\x89PNG\r\n\x1a\nimage")
+	result, err := json.Marshal(gin.H{"data": []gin.H{{"b64_json": base64.StdEncoding.EncodeToString(png)}}})
+	require.NoError(t, err)
+	require.NoError(t, tasks.Complete(context.Background(), task.ID, http.StatusOK, result))
+	h := &AsyncImageHandler{tasks: tasks}
+	router := gin.New()
+	keyID := int64(9)
+	router.Use(func(c *gin.Context) {
+		c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{ID: keyID, UserID: 7})
+		c.Next()
+	})
+	router.GET("/config", h.WorkspaceConfig)
+	router.GET("/tasks/:task_id/images/:index", h.Content)
+	for _, tc := range []struct {
+		index string
+		key   int64
+		code  int
+	}{{"0", 9, 200}, {"0", 10, 404}, {"-1", 9, 400}, {"bad", 9, 400}, {"1", 9, 404}} {
+		// 2. 相同用户使用另一密钥也必须被拒绝，不泄露任务是否存在。
+		keyID = tc.key
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/tasks/"+task.ID+"/images/"+tc.index, nil))
+		require.Equal(t, tc.code, w.Code)
+		if tc.code == http.StatusOK {
+			require.Equal(t, png, w.Body.Bytes())
+			require.Equal(t, "no-store", w.Header().Get("Cache-Control"))
+			require.Equal(t, "nosniff", w.Header().Get("X-Content-Type-Options"))
+			require.Contains(t, w.Header().Get("Content-Disposition"), "attachment")
+		}
+	}
+	// 3. 配置只暴露启用状态，关闭开关后依旧允许查询已完成的图片。
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/config", nil))
+	require.Contains(t, w.Body.String(), `"async_enabled":true`)
+	h.tasks = service.NewImageTaskService(store)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/config", nil))
+	require.Contains(t, w.Body.String(), `"async_enabled":false`)
+}
 
 type asyncImageMemoryStore struct {
 	mu    sync.RWMutex

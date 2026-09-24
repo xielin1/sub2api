@@ -259,6 +259,8 @@ func RegisterGatewayRoutes(
 		gateway.POST("/images/generations/async", h.AsyncImage.Submit)
 		gateway.POST("/images/edits/async", h.AsyncImage.Submit)
 		gateway.GET("/images/tasks/:task_id", h.AsyncImage.Get)
+		// 1. 图片下载沿用任务的密钥归属检查，余额耗尽后仍可取回结果。
+		gateway.GET("/images/tasks/:task_id/images/:index", h.AsyncImage.Content)
 		gateway.POST("/images/batches", h.BatchImage.Submit)
 		gateway.GET("/images/batches", h.BatchImage.List)
 		gateway.GET("/images/batches/models", h.BatchImage.Models)

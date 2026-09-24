@@ -187,6 +187,30 @@ func (s *ImageTaskService) Get(ctx context.Context, owner ImageTaskOwner, id str
 	return imageTaskToPublic(task), nil
 }
 
+// ImageContent 1. 复用任务归属检查；2. 只下载已完成任务中的图片，不接收任意 URL。
+func (s *ImageTaskService) ImageContent(ctx context.Context, owner ImageTaskOwner, id string, index int) ([]byte, string, error) {
+	task, err := s.Get(ctx, owner, id)
+	if err != nil {
+		return nil, "", err
+	}
+	var result struct {
+		Data []map[string]json.RawMessage `json:"data"`
+	}
+	if task.Status != ImageTaskStatusCompleted || json.Unmarshal(task.Result, &result) != nil || index < 0 || index >= len(result.Data) {
+		return nil, "", ErrImageTaskNotFound
+	}
+	// 3. 复用图片下载器的超时、大小限制和 base64 解析，错误原样向上传递。
+	downloader := NewImageResultUploader(nil, "", defaultImageMaxDownloadBytes, nil)
+	data, contentType, err := downloader.fetchImageBytes(ctx, result.Data[index])
+	if err != nil {
+		return nil, "", ErrImageTaskUnavailable.WithCause(err)
+	}
+	if contentType != "image/png" && contentType != "image/jpeg" && contentType != "image/webp" {
+		return nil, "", ErrImageTaskUnavailable.WithCause(errors.New("unsupported image content type"))
+	}
+	return data, contentType, nil
+}
+
 func (s *ImageTaskService) Complete(ctx context.Context, id string, statusCode int, result json.RawMessage) error {
 	if !json.Valid(result) {
 		return s.Fail(ctx, id, http.StatusBadGateway, imageTaskErrorJSON("api_error", "upstream returned a non-JSON image response"))
