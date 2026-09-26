@@ -87,7 +87,7 @@ const contentRef = ref<HTMLElement | null>(null)
 watch(() => props.page, async () => {
   // 2. 从长介绍切换到规则或联系方式时回到顶部，并将焦点移入当前页。
   await nextTick()
-  contentRef.value?.closest('.modal-body')?.scrollTo({ top: 0 })
+  contentRef.value?.closest('.modal-body, .recruitment-panel')?.scrollTo({ top: 0 })
   contentRef.value?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
 })
 </script>
@@ -152,7 +152,41 @@ watch(() => props.page, async () => {
   .recruitment-benefits { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .recruitment-benefit h4 { font-size: 13px; }
 }
-/* 3. 暗色模式只调整内容区；插画和品牌横幅保持原色。 */
+/* 3. 右下角浮动面板空间有限，统一缩小横幅、间距与字号；管理端预览弹窗不受影响。 */
+:global(.recruitment-panel) .sales-recruitment { border-radius: 18px; }
+:global(.recruitment-panel) .recruitment-hero { min-height: 132px; }
+:global(.recruitment-panel) .recruitment-hero-copy { width: 72%; padding: 18px 18px 16px; }
+:global(.recruitment-panel) .recruitment-eyebrow { font-size: 10px; letter-spacing: .14em; margin-bottom: 8px; }
+:global(.recruitment-panel) .recruitment-hero h2 { font-size: 20px; letter-spacing: -.02em; }
+:global(.recruitment-panel) .recruitment-subtitle { margin-top: 6px; font-size: 12px; }
+:global(.recruitment-panel) .recruitment-badge { margin-top: 10px; padding: 3px 8px; font-size: 10px; }
+:global(.recruitment-panel) .recruitment-art { width: 38%; }
+:global(.recruitment-panel) .recruitment-body { padding: 16px 18px 18px; }
+:global(.recruitment-panel) .recruitment-intro { font-size: 13px; line-height: 1.7; margin-bottom: 14px; }
+:global(.recruitment-panel) .recruitment-section-title { font-size: 13px; gap: 10px; margin-bottom: 10px; }
+:global(.recruitment-panel) .recruitment-tiers { gap: 8px; margin-bottom: 18px; }
+:global(.recruitment-panel) .recruitment-tier { gap: 10px; padding: 10px 12px; border-radius: 12px; }
+:global(.recruitment-panel) .recruitment-tier-number { width: 28px; height: 28px; font-size: 11px; }
+:global(.recruitment-panel) .recruitment-tier-label { font-size: 13px; }
+:global(.recruitment-panel) .recruitment-tier-value strong { font-size: 20px; }
+:global(.recruitment-panel) .recruitment-tier-value span { font-size: 10px; }
+:global(.recruitment-panel) .recruitment-benefits { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+:global(.recruitment-panel) .recruitment-benefit-icon { padding: 8px; border-radius: 12px; }
+:global(.recruitment-panel) .recruitment-benefit h4 { font-size: 12px; margin: 6px 0 3px; }
+:global(.recruitment-panel) .recruitment-benefit p { font-size: 11px; line-height: 1.5; }
+:global(.recruitment-panel) .recruitment-primary { padding: 11px 16px; border-radius: 12px; font-size: 14px; gap: 8px; }
+:global(.recruitment-panel) .recruitment-link { margin-top: 10px; font-size: 12px; }
+:global(.recruitment-panel) .recruitment-footer { margin-top: 12px; }
+:global(.recruitment-panel) .recruitment-back { margin-bottom: 14px; font-size: 12px; }
+:global(.recruitment-panel) .recruitment-rules { font-size: 13px; line-height: 1.8; margin-bottom: 18px; }
+:global(.recruitment-panel) .recruitment-wechat { font-size: 13px; }
+:global(.recruitment-panel) .recruitment-qr { width: min(180px, 100%); padding: 10px; margin: 14px auto; border-radius: 14px; }
+:global(.recruitment-panel) .recruitment-contact h3 { font-size: 16px; margin: 12px 0 6px; }
+:global(.recruitment-panel) .recruitment-contact-note { font-size: 12px; line-height: 1.7; }
+:global(.recruitment-panel) .recruitment-wechat-id { margin-top: 14px; padding: 12px; }
+:global(.recruitment-panel) .recruitment-wechat-id strong { font-size: 15px; }
+:global(.recruitment-panel) .recruitment-tip { margin-top: 10px; padding: 10px; font-size: 11px; }
+/* 4. 暗色模式只调整内容区；插画和品牌横幅保持原色。 */
 :global(.dark .sales-recruitment) { --recruitment-ink: #e9eef8; --recruitment-muted: #a3afc2; background: #172033; }
 :global(.dark .recruitment-hero) { color: #15213c; }
 :global(.dark .recruitment-tier) { background: #202d46; border-color: #344666; }
