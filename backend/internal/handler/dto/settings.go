@@ -87,6 +87,17 @@ func ParseSalesRecruitment(raw string) *SalesRecruitment {
 	return &recruitment
 }
 
+// SMTPSettings 是不返回密码明文的SMTP管理端视图。
+type SMTPSettings struct {
+	Host               string `json:"host"`
+	Port               int    `json:"port"`
+	Username           string `json:"username"`
+	PasswordConfigured bool   `json:"password_configured"`
+	From               string `json:"from_email"`
+	FromName           string `json:"from_name"`
+	UseTLS             bool   `json:"use_tls"`
+}
+
 // SystemSettings represents the admin settings API response payload.
 type SystemSettings struct {
 	RegistrationEnabled                 bool                     `json:"registration_enabled"`
@@ -110,14 +121,14 @@ type SystemSettings struct {
 	LoginAgreementMode                  string                   `json:"login_agreement_mode"`
 	LoginAgreementUpdatedAt             string                   `json:"login_agreement_updated_at"`
 	LoginAgreementDocuments             []LoginAgreementDocument `json:"login_agreement_documents"`
-
-	SMTPHost               string `json:"smtp_host"`
-	SMTPPort               int    `json:"smtp_port"`
-	SMTPUsername           string `json:"smtp_username"`
-	SMTPPasswordConfigured bool   `json:"smtp_password_configured"`
-	SMTPFrom               string `json:"smtp_from_email"`
-	SMTPFromName           string `json:"smtp_from_name"`
-	SMTPUseTLS             bool   `json:"smtp_use_tls"`
+	SMTPHost                            string                   `json:"smtp_host"`
+	SMTPPort                            int                      `json:"smtp_port"`
+	SMTPUsername                        string                   `json:"smtp_username"`
+	SMTPPasswordConfigured              bool                     `json:"smtp_password_configured"`
+	SMTPFrom                            string                   `json:"smtp_from_email"`
+	SMTPFromName                        string                   `json:"smtp_from_name"`
+	SMTPUseTLS                          bool                     `json:"smtp_use_tls"`
+	SMTPBackup                          *SMTPSettings            `json:"smtp_backup"`
 
 	TurnstileEnabled                       bool     `json:"turnstile_enabled"`
 	TurnstileSiteKey                       string   `json:"turnstile_site_key"`

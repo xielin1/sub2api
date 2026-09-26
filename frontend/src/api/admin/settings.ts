@@ -399,6 +399,22 @@ export function deriveWeChatConnectStoredMode(
 /**
  * System settings interface
  */
+// 1. 管理接口只返回SMTP连接信息；2. 密码仅返回是否已配置。
+export interface SmtpSettings {
+  host: string;
+  port: number;
+  username: string;
+  password_configured: boolean;
+  from_email: string;
+  from_name: string;
+  use_tls: boolean;
+}
+
+// 1. 保存时允许提交新密码；2. 省略密码表示沿用已有配置。
+export interface SmtpUpdateSettings extends Omit<SmtpSettings, "password_configured"> {
+  password?: string;
+}
+
 export interface SystemSettings {
   // Registration settings
   registration_enabled: boolean;
@@ -502,6 +518,7 @@ export interface SystemSettings {
   smtp_from_email: string;
   smtp_from_name: string;
   smtp_use_tls: boolean;
+  smtp_backup?: SmtpSettings | null;
   // Cloudflare Turnstile settings
   turnstile_enabled: boolean;
   turnstile_site_key: string;
@@ -851,6 +868,7 @@ export interface UpdateSettingsRequest {
   smtp_from_email?: string;
   smtp_from_name?: string;
   smtp_use_tls?: boolean;
+  smtp_backup?: SmtpUpdateSettings;
   turnstile_enabled?: boolean;
   turnstile_site_key?: string;
   turnstile_secret_key?: string;
@@ -1098,6 +1116,7 @@ export interface TestSmtpRequest {
   smtp_username: string;
   smtp_password: string;
   smtp_use_tls: boolean;
+  smtp_backup?: boolean;
 }
 
 /**

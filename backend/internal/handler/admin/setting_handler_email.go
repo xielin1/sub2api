@@ -18,6 +18,7 @@ type TestSMTPRequest struct {
 	SMTPUsername string `json:"smtp_username"`
 	SMTPPassword string `json:"smtp_password"`
 	SMTPUseTLS   *bool  `json:"smtp_use_tls"`
+	SMTPBackup   bool   `json:"smtp_backup"`
 }
 
 func resolveSMTPUseTLS(requested *bool, savedConfig *service.SMTPConfig) bool {
@@ -40,8 +41,15 @@ func (h *SettingHandler) TestSMTPConnection(c *gin.Context) {
 	req.SMTPUsername = strings.TrimSpace(req.SMTPUsername)
 
 	var savedConfig *service.SMTPConfig
-	if cfg, err := h.emailService.GetSMTPConfig(c.Request.Context()); err == nil && cfg != nil {
-		savedConfig = cfg
+	if configs, err := h.emailService.GetSMTPConfigs(c.Request.Context()); err == nil {
+		// 1. 主通道读取首项；2. 备用通道测试只读取第二项，避免误用主通道密码。
+		index := 0
+		if req.SMTPBackup {
+			index = 1
+		}
+		if index < len(configs) {
+			savedConfig = configs[index]
+		}
 	}
 
 	if req.SMTPHost == "" && savedConfig != nil {

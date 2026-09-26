@@ -947,6 +947,8 @@ export default {
       smtp: {
         title: 'SMTP 设置',
         description: '配置用于发送验证码的邮件服务',
+        backupTitle: '备用 SMTP',
+        backupDescription: '主通道发送失败时自动改用此通道；主通道恢复后仍优先使用主通道。',
         testConnection: '测试连接',
         testing: '测试中...',
         host: 'SMTP 主机',

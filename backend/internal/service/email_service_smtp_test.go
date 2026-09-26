@@ -381,3 +381,20 @@ func TestSendEmailWithConfigImplicitTLS(t *testing.T) {
 		t.Fatal("expected send path to reach DATA")
 	}
 }
+
+// 主通道不可连接时，备用通道必须继续完成完整SMTP发送。
+func TestSendEmailFallsBackToBackupSMTP(t *testing.T) {
+	srv, backupPort := startFakeSMTPServer(t, false, true)
+	svc := &EmailService{}
+	primary := smtpTestConfig(1, false)
+	backup := smtpTestConfig(backupPort, true)
+
+	// 1. 主通道连接失败；2. 备用通道完成认证与DATA提交。
+	err := svc.sendEmailWithConfigs([]*SMTPConfig{primary, backup}, "rcpt@example.com", "subject", "<p>body</p>")
+	if err != nil {
+		t.Fatalf("expected backup SMTP to send successfully, got: %v", err)
+	}
+	if !srv.sawCommand("DATA") {
+		t.Fatal("expected backup SMTP to reach DATA")
+	}
+}

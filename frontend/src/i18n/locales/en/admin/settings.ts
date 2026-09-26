@@ -952,6 +952,8 @@ export default {
       smtp: {
         title: 'SMTP Settings',
         description: 'Configure email sending for verification codes',
+        backupTitle: 'Backup SMTP',
+        backupDescription: 'Automatically used when the primary channel fails; the primary remains preferred after recovery.',
         testConnection: 'Test Connection',
         testing: 'Testing...',
         host: 'SMTP Host',

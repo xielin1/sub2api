@@ -8639,8 +8639,8 @@
               </div>
               <button
                 type="button"
-                @click="testSmtpConnection"
-                :disabled="testingSmtp || loadFailed"
+                @click="testSmtpConnection(false)"
+                :disabled="testingSmtp || testingBackupSmtp || loadFailed"
                 class="btn btn-secondary btn-sm"
               >
                 <svg
@@ -8783,6 +8783,87 @@
                   </p>
                 </div>
                 <Toggle v-model="form.smtp_use_tls" />
+              </div>
+
+              <div class="flex items-center justify-between border-t border-gray-100 pt-6 dark:border-dark-700">
+                <div>
+                  <h3 class="font-medium text-gray-900 dark:text-white">
+                    {{ t("admin.settings.smtp.backupTitle") }}
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.smtp.backupDescription") }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  :disabled="testingSmtp || testingBackupSmtp || !form.smtp_backup.host || loadFailed"
+                  @click="testSmtpConnection(true)"
+                >
+                  {{
+                    testingBackupSmtp
+                      ? t("admin.settings.smtp.testing")
+                      : t("admin.settings.smtp.testConnection")
+                  }}
+                </button>
+              </div>
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.host") }}
+                  </label>
+                  <input v-model="form.smtp_backup.host" type="text" class="input" :placeholder="t('admin.settings.smtp.hostPlaceholder')" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.port") }}
+                  </label>
+                  <input v-model.number="form.smtp_backup.port" type="number" min="1" max="65535" class="input" :placeholder="t('admin.settings.smtp.portPlaceholder')" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.username") }}
+                  </label>
+                  <input v-model="form.smtp_backup.username" type="text" class="input" :placeholder="t('admin.settings.smtp.usernamePlaceholder')" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.password") }}
+                  </label>
+                  <input
+                    v-model="form.smtp_backup.password"
+                    type="password"
+                    class="input"
+                    autocomplete="new-password"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    :placeholder="form.smtp_backup.password_configured ? t('admin.settings.smtp.passwordConfiguredPlaceholder') : t('admin.settings.smtp.passwordPlaceholder')"
+                    @keydown="smtpBackupPasswordManuallyEdited = true"
+                    @paste="smtpBackupPasswordManuallyEdited = true"
+                  />
+                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ form.smtp_backup.password_configured ? t("admin.settings.smtp.passwordConfiguredHint") : t("admin.settings.smtp.passwordHint") }}
+                  </p>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.fromEmail") }}
+                  </label>
+                  <input v-model="form.smtp_backup.from_email" type="email" class="input" :placeholder="t('admin.settings.smtp.fromEmailPlaceholder')" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t("admin.settings.smtp.fromName") }}
+                  </label>
+                  <input v-model="form.smtp_backup.from_name" type="text" class="input" :placeholder="t('admin.settings.smtp.fromNamePlaceholder')" />
+                </div>
+              </div>
+              <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700">
+                <div>
+                  <label class="font-medium text-gray-900 dark:text-white">{{ t("admin.settings.smtp.useTls") }}</label>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ t("admin.settings.smtp.useTlsHint") }}</p>
+                </div>
+                <Toggle v-model="form.smtp_backup.use_tls" />
               </div>
             </div>
           </div>
@@ -9121,6 +9202,7 @@ import {
 import type {
   AuthSourceDefaultsState,
   AuthSourceType,
+  SmtpSettings,
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting,
@@ -9289,8 +9371,10 @@ const loading = ref(true);
 const loadFailed = ref(false);
 const saving = ref(false);
 const testingSmtp = ref(false);
+const testingBackupSmtp = ref(false);
 const sendingTestEmail = ref(false);
 const smtpPasswordManuallyEdited = ref(false);
+const smtpBackupPasswordManuallyEdited = ref(false);
 const testEmailAddress = ref("");
 const registrationEmailSuffixWhitelistTags = ref<string[]>([]);
 const registrationEmailSuffixWhitelistDraft = ref("");
@@ -9837,6 +9921,7 @@ type SettingsForm = Omit<
   | "wechat_connect_mobile_enabled"
   | "openai_oauth_scheduling_rate_multiplier"
   | "sales_recruitment"
+  | "smtp_backup"
 > & {
   // 1. 老站未配置时保留本地关闭模板，编辑器始终绑定完整草稿。
   sales_recruitment: SalesRecruitment;
@@ -9845,6 +9930,8 @@ type SettingsForm = Omit<
   channel_monitor_show_quota: boolean;
   channel_monitor_hide_user_ranking: boolean;
   smtp_password: string;
+  // 1. 接口不返回密码明文；2. 编辑表单保留独立密码输入框。
+  smtp_backup: SmtpSettings & { password: string };
   turnstile_secret_key: string;
   tencent_captcha_app_secret_key: string;
   tencent_captcha_cloud_secret_id: string;
@@ -10021,6 +10108,16 @@ const form = reactive<SettingsForm>({
   smtp_from_email: "",
   smtp_from_name: "",
   smtp_use_tls: true,
+  smtp_backup: {
+    host: "",
+    port: 587,
+    username: "",
+    password: "",
+    password_configured: false,
+    from_email: "",
+    from_name: "",
+    use_tls: true,
+  },
   // Cloudflare Turnstile
   turnstile_enabled: false,
   turnstile_site_key: "",
@@ -11186,11 +11283,14 @@ async function loadSettings() {
     const settings = await adminAPI.settings.getSettings();
     settings.payment_load_balance_strategy =
       settings.payment_load_balance_strategy || "round-robin";
-    // Only assign non-null values from backend (null means unconfigured, keep defaults)
+    // 1. 空值表示未配置，保留表单默认值；2. 备用 SMTP 单独合并，避免覆盖密码输入字段。
     for (const [key, value] of Object.entries(settings)) {
-      if (value !== null && value !== undefined) {
+      if (key !== "smtp_backup" && value !== null && value !== undefined) {
         (form as Record<string, unknown>)[key] = value;
       }
+    }
+    if (settings.smtp_backup) {
+      Object.assign(form.smtp_backup, settings.smtp_backup, { password: "" });
     }
     // For this optional override, null explicitly selects per-account rates.
     if (settings.openai_oauth_scheduling_rate_multiplier === null) {
@@ -11264,6 +11364,8 @@ async function loadSettings() {
     registrationEmailSuffixWhitelistDraft.value = "";
     form.smtp_password = "";
     smtpPasswordManuallyEdited.value = false;
+    form.smtp_backup.password = "";
+    smtpBackupPasswordManuallyEdited.value = false;
     form.turnstile_secret_key = "";
     form.tencent_captcha_app_secret_key = "";
     form.tencent_captcha_cloud_secret_id = "";
@@ -11668,6 +11770,17 @@ async function saveSettings() {
       smtp_from_email: form.smtp_from_email,
       smtp_from_name: form.smtp_from_name,
       smtp_use_tls: form.smtp_use_tls,
+      smtp_backup: {
+        host: form.smtp_backup.host,
+        port: form.smtp_backup.port,
+        username: form.smtp_backup.username,
+        password: smtpBackupPasswordManuallyEdited.value
+          ? form.smtp_backup.password
+          : undefined,
+        from_email: form.smtp_backup.from_email,
+        from_name: form.smtp_backup.from_name,
+        use_tls: form.smtp_backup.use_tls,
+      },
       turnstile_enabled: form.turnstile_enabled,
       turnstile_site_key: form.turnstile_site_key,
       turnstile_secret_key: form.turnstile_secret_key || undefined,
@@ -12002,6 +12115,8 @@ async function saveSettings() {
     registrationEmailSuffixWhitelistDraft.value = "";
     form.smtp_password = "";
     smtpPasswordManuallyEdited.value = false;
+    form.smtp_backup.password = "";
+    smtpBackupPasswordManuallyEdited.value = false;
     form.turnstile_secret_key = "";
     form.aliyun_captcha_access_key_secret = "";
     form.linuxdo_connect_client_secret = "";
@@ -12083,18 +12198,27 @@ async function saveSettings() {
   }
 }
 
-async function testSmtpConnection() {
-  testingSmtp.value = true;
+async function testSmtpConnection(useBackup: boolean) {
+  const config = useBackup ? form.smtp_backup : {
+    host: form.smtp_host,
+    port: form.smtp_port,
+    username: form.smtp_username,
+    password: form.smtp_password,
+    use_tls: form.smtp_use_tls,
+  };
+  const passwordEdited = useBackup
+    ? smtpBackupPasswordManuallyEdited.value
+    : smtpPasswordManuallyEdited.value;
+  if (useBackup) testingBackupSmtp.value = true;
+  else testingSmtp.value = true;
   try {
-    const smtpPasswordForTest = smtpPasswordManuallyEdited.value
-      ? form.smtp_password
-      : "";
     const result = await adminAPI.settings.testSmtpConnection({
-      smtp_host: form.smtp_host,
-      smtp_port: form.smtp_port,
-      smtp_username: form.smtp_username,
-      smtp_password: smtpPasswordForTest,
-      smtp_use_tls: form.smtp_use_tls,
+      smtp_host: config.host,
+      smtp_port: config.port,
+      smtp_username: config.username,
+      smtp_password: passwordEdited ? config.password : "",
+      smtp_use_tls: config.use_tls,
+      smtp_backup: useBackup,
     });
     // API returns { message: "..." } on success, errors are thrown as exceptions
     appStore.showSuccess(
@@ -12105,7 +12229,8 @@ async function testSmtpConnection() {
       extractApiErrorMessage(error, t("admin.settings.failedToTestSmtp")),
     );
   } finally {
-    testingSmtp.value = false;
+    if (useBackup) testingBackupSmtp.value = false;
+    else testingSmtp.value = false;
   }
 }
 

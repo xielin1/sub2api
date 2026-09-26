@@ -42,13 +42,14 @@ type UpdateSettingsRequest struct {
 	LoginAgreementDocuments             []dto.LoginAgreementDocument `json:"login_agreement_documents"`
 
 	// 邮件服务设置
-	SMTPHost     string `json:"smtp_host"`
-	SMTPPort     int    `json:"smtp_port"`
-	SMTPUsername string `json:"smtp_username"`
-	SMTPPassword string `json:"smtp_password"`
-	SMTPFrom     string `json:"smtp_from_email"`
-	SMTPFromName string `json:"smtp_from_name"`
-	SMTPUseTLS   bool   `json:"smtp_use_tls"`
+	SMTPHost     string              `json:"smtp_host"`
+	SMTPPort     int                 `json:"smtp_port"`
+	SMTPUsername string              `json:"smtp_username"`
+	SMTPPassword string              `json:"smtp_password"`
+	SMTPFrom     string              `json:"smtp_from_email"`
+	SMTPFromName string              `json:"smtp_from_name"`
+	SMTPUseTLS   bool                `json:"smtp_use_tls"`
+	SMTPBackup   *service.SMTPConfig `json:"smtp_backup"`
 
 	// Cloudflare Turnstile 设置
 	TurnstileEnabled   bool   `json:"turnstile_enabled"`
@@ -625,6 +626,20 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	req.TencentCaptchaCloudSecretKey = strings.TrimSpace(req.TencentCaptchaCloudSecretKey)
 	if req.SMTPPort <= 0 {
 		req.SMTPPort = 587
+	}
+	if req.SMTPBackup != nil {
+		// 1. 外部配置在HTTP边界统一规整；2. 留空密码沿用已保存值。
+		req.SMTPBackup.Host = strings.TrimSpace(req.SMTPBackup.Host)
+		req.SMTPBackup.Username = strings.TrimSpace(req.SMTPBackup.Username)
+		req.SMTPBackup.Password = strings.TrimSpace(req.SMTPBackup.Password)
+		req.SMTPBackup.From = strings.TrimSpace(req.SMTPBackup.From)
+		req.SMTPBackup.FromName = strings.TrimSpace(req.SMTPBackup.FromName)
+		if req.SMTPBackup.Port <= 0 {
+			req.SMTPBackup.Port = 587
+		}
+		if req.SMTPBackup.Password == "" && previousSettings.SMTPBackup != nil {
+			req.SMTPBackup.Password = previousSettings.SMTPBackup.Password
+		}
 	}
 	req.DefaultSubscriptions = normalizeDefaultSubscriptions(req.DefaultSubscriptions)
 	req.AuthSourceDefaultEmailSubscriptions = normalizeOptionalDefaultSubscriptions(req.AuthSourceDefaultEmailSubscriptions)
@@ -1617,6 +1632,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		SMTPFrom:                            req.SMTPFrom,
 		SMTPFromName:                        req.SMTPFromName,
 		SMTPUseTLS:                          req.SMTPUseTLS,
+		SMTPBackup:                          req.SMTPBackup,
 		TurnstileEnabled:                    req.TurnstileEnabled,
 		TurnstileSiteKey:                    req.TurnstileSiteKey,
 		TurnstileSecretKey:                  req.TurnstileSecretKey,
@@ -2279,6 +2295,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		SMTPFrom:                                               updatedSettings.SMTPFrom,
 		SMTPFromName:                                           updatedSettings.SMTPFromName,
 		SMTPUseTLS:                                             updatedSettings.SMTPUseTLS,
+		SMTPBackup:                                             smtpSettingsToDTO(updatedSettings.SMTPBackup),
 		TurnstileEnabled:                                       updatedSettings.TurnstileEnabled,
 		TurnstileSiteKey:                                       updatedSettings.TurnstileSiteKey,
 		TurnstileSecretKeyConfigured:                           updatedSettings.TurnstileSecretKeyConfigured,

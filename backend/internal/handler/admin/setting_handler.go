@@ -161,6 +161,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		SMTPFrom:                                               settings.SMTPFrom,
 		SMTPFromName:                                           settings.SMTPFromName,
 		SMTPUseTLS:                                             settings.SMTPUseTLS,
+		SMTPBackup:                                             smtpSettingsToDTO(settings.SMTPBackup),
 		TurnstileEnabled:                                       settings.TurnstileEnabled,
 		TurnstileSiteKey:                                       settings.TurnstileSiteKey,
 		TurnstileSecretKeyConfigured:                           settings.TurnstileSecretKeyConfigured,
@@ -416,6 +417,22 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 	}
 
 	response.Success(c, systemSettingsResponseData(payload, authSourceDefaults))
+}
+
+// smtpSettingsToDTO 隐藏SMTP密码，仅返回后台表单需要的配置状态。
+func smtpSettingsToDTO(config *service.SMTPConfig) *dto.SMTPSettings {
+	if config == nil {
+		return nil
+	}
+	return &dto.SMTPSettings{
+		Host:               config.Host,
+		Port:               config.Port,
+		Username:           config.Username,
+		PasswordConfigured: config.Password != "",
+		From:               config.From,
+		FromName:           config.FromName,
+		UseTLS:             config.UseTLS,
+	}
 }
 
 // openaiFastPolicySettingsToDTO converts service -> dto for OpenAI fast policy.

@@ -203,6 +203,14 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeySMTPFrom] = settings.SMTPFrom
 	updates[SettingKeySMTPFromName] = settings.SMTPFromName
 	updates[SettingKeySMTPUseTLS] = strconv.FormatBool(settings.SMTPUseTLS)
+	if settings.SMTPBackup != nil {
+		// 1. 备用通道沿用 settings JSON 存储，避免为同一组配置增加七个平行字段。
+		backupJSON, err := json.Marshal(settings.SMTPBackup)
+		if err != nil {
+			return nil, fmt.Errorf("marshal backup smtp config: %w", err)
+		}
+		updates[SettingKeySMTPBackup] = string(backupJSON)
+	}
 
 	// Cloudflare Turnstile 设置（只有非空才更新密钥）
 	updates[SettingKeyTurnstileEnabled] = strconv.FormatBool(settings.TurnstileEnabled)

@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -86,13 +87,13 @@ const (
 
 // SMTPConfig SMTP配置
 type SMTPConfig struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	From     string
-	FromName string
-	UseTLS   bool
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	From     string `json:"from_email"`
+	FromName string `json:"from_name"`
+	UseTLS   bool   `json:"use_tls"`
 }
 
 // EmailService 邮件服务
@@ -134,6 +135,15 @@ func emailRecipientName(email string) string {
 
 // GetSMTPConfig 从数据库获取SMTP配置
 func (s *EmailService) GetSMTPConfig(ctx context.Context) (*SMTPConfig, error) {
+	configs, err := s.GetSMTPConfigs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return configs[0], nil
+}
+
+// GetSMTPConfigs 从数据库按主、备顺序获取SMTP配置。
+func (s *EmailService) GetSMTPConfigs(ctx context.Context) ([]*SMTPConfig, error) {
 	keys := []string{
 		SettingKeySMTPHost,
 		SettingKeySMTPPort,
@@ -142,6 +152,7 @@ func (s *EmailService) GetSMTPConfig(ctx context.Context) (*SMTPConfig, error) {
 		SettingKeySMTPFrom,
 		SettingKeySMTPFromName,
 		SettingKeySMTPUseTLS,
+		SettingKeySMTPBackup,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -163,7 +174,7 @@ func (s *EmailService) GetSMTPConfig(ctx context.Context) (*SMTPConfig, error) {
 
 	useTLS := settings[SettingKeySMTPUseTLS] == "true"
 
-	return &SMTPConfig{
+	configs := []*SMTPConfig{{
 		Host:     host,
 		Port:     port,
 		Username: strings.TrimSpace(settings[SettingKeySMTPUsername]),
@@ -171,16 +182,45 @@ func (s *EmailService) GetSMTPConfig(ctx context.Context) (*SMTPConfig, error) {
 		From:     strings.TrimSpace(settings[SettingKeySMTPFrom]),
 		FromName: strings.TrimSpace(settings[SettingKeySMTPFromName]),
 		UseTLS:   useTLS,
-	}, nil
+	}}
+	if raw := strings.TrimSpace(settings[SettingKeySMTPBackup]); raw != "" {
+		// 1. 备用配置来自系统设置边界，格式错误直接返回，避免静默忽略已启用的容灾配置。
+		var backup SMTPConfig
+		if err := json.Unmarshal([]byte(raw), &backup); err != nil {
+			return nil, fmt.Errorf("parse backup smtp config: %w", err)
+		}
+		if strings.TrimSpace(backup.Host) != "" {
+			if backup.Port <= 0 {
+				backup.Port = 587
+			}
+			configs = append(configs, &backup)
+		}
+	}
+	return configs, nil
 }
 
 // SendEmail 发送邮件（使用数据库中保存的配置）
 func (s *EmailService) SendEmail(ctx context.Context, to, subject, body string) error {
-	config, err := s.GetSMTPConfig(ctx)
+	configs, err := s.GetSMTPConfigs(ctx)
 	if err != nil {
 		return err
 	}
-	return s.SendEmailWithConfig(config, to, subject, body)
+	return s.sendEmailWithConfigs(configs, to, subject, body)
+}
+
+// sendEmailWithConfigs 依次尝试SMTP通道，第一个发送成功即返回。
+func (s *EmailService) sendEmailWithConfigs(configs []*SMTPConfig, to, subject, body string) error {
+	var sendErrors []error
+	for index, config := range configs {
+		if err := s.SendEmailWithConfig(config, to, subject, body); err != nil {
+			// 1. 主通道失败后记录原因并继续备用通道；2. 不记录收件人和凭据。
+			slog.Warn("smtp channel failed", "channel", index+1, "host", config.Host, "error", err)
+			sendErrors = append(sendErrors, err)
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("all smtp channels failed: %w", errors.Join(sendErrors...))
 }
 
 const smtpDialTimeout = 10 * time.Second

@@ -171,6 +171,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyForceEmailOnThirdPartySignup:              "false",
 		SettingKeySMTPPort:                                  "587",
 		SettingKeySMTPUseTLS:                                "false",
+		SettingKeySMTPBackup:                                "",
 		// Model fallback defaults
 		SettingKeyEnableModelFallback:      "false",
 		SettingKeyFallbackModelAnthropic:   "claude-3-5-sonnet-20241022",
@@ -387,6 +388,13 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.SMTPPort = port
 	} else {
 		result.SMTPPort = 587
+	}
+	if raw := strings.TrimSpace(settings[SettingKeySMTPBackup]); raw != "" {
+		// 1. 配置在读取边界完成反序列化；格式损坏时保持 nil，让调用方明确看到备用通道未启用。
+		var backup SMTPConfig
+		if json.Unmarshal([]byte(raw), &backup) == nil {
+			result.SMTPBackup = &backup
+		}
 	}
 
 	if concurrency, err := strconv.Atoi(settings[SettingKeyDefaultConcurrency]); err == nil {
