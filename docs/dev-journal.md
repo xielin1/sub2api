@@ -1,5 +1,13 @@
 # 开发记录
 
+## 2026-09-26：双 SMTP 自动切换并更新线上2
+
+- 代码：提交 `d8813c2ea`、标签 `v0.2.8-x4`。系统设置新增备用 SMTP 编辑与独立连接测试；所有业务邮件仍优先使用主通道，主通道发送失败后自动尝试备用通道，后续邮件会继续优先尝试已恢复的主通道。备用密码不通过管理接口返回，留空保存时沿用原值。
+- 发布：构建 Linux amd64、`-tags embed` 发布程序并生成 `sub2api:0.2.8-x4`，仅重建 `sub2api` 容器，PostgreSQL、Redis 和代理容器未重启。发布包、原 Compose、PostgreSQL 自定义格式备份与恢复清单位于 `/opt/sub2api/backups/release-0.2.8-x4`；`pg_restore --list` 共 1216 项，旧镜像保留为 `sub2api:rollback-before-x4`。
+- 配置：Brevo 保持主通道；SendPulse 配置为备用通道。Cloudflare 为 `mdai.life` 增加 SendPulse SPF、DKIM，保留既有 Brevo DKIM 与 DMARC；SendPulse 域名认证及 `noreply@mdai.life` 发件人均为 Active。免费 SMTP 当前额度 12,000 封、每小时 50 封。
+- 验证：后端 service/admin handler 测试、前端类型检查、国际化检查、ESLint 和生产构建通过；线上容器 healthy、重启 0，公网首页、登录页、健康检查均为 200，启动日志无 ERROR/FATAL。Brevo 主通道发送成功；SendPulse 备用连接测试成功，向 `332447451@qq.com` 的实际邮件在 SendPulse 历史中为 Delivered；管理接口仅返回备用密码已配置状态。真实主通道故障切换由 SMTP 会话级测试覆盖，未在线上临时破坏 Brevo 配置。
+- 剩余风险：主通道无响应时会先等待连接或读写超时再切换，单封邮件可能延迟约 10 至 20 秒；SendPulse 免费计划的每小时上限仍适用。
+
 ## 2026-09-26：版本命名统一为「版本+x序号」
 
 - 规则：同一上游版本上每次发布递增 x 序号（如 `v0.2.8-x1`、`v0.2.8-x2`），合入上游新版本后从 `x1` 重新开始；不再使用 klno 后缀。
