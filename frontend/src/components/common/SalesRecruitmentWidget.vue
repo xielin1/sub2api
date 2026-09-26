@@ -21,14 +21,17 @@
       </button>
     </div>
     <div v-if="open" class="recruitment-panel" :style="panelStyle" role="dialog" :aria-label="config.title">
-      <button type="button" class="recruitment-panel-close" :aria-label="t('salesRecruitment.collapse')" @click="open = false"><Icon name="x" size="sm" /></button>
-      <SalesRecruitmentContent :config="config" :page="page" @navigate="page = $event" />
+      <!-- 2. 内容按原弹窗宽度排版；视口放不下时整体等比缩小，保证全部可见且无需滚动。 -->
+      <div ref="panelInnerRef" class="recruitment-panel-inner" :style="innerStyle">
+        <button type="button" class="recruitment-panel-close" :aria-label="t('salesRecruitment.collapse')" @click="open = false"><Icon name="x" size="sm" /></button>
+        <SalesRecruitmentContent :config="config" :page="page" @navigate="page = $event" />
+      </div>
     </div>
   </template>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -43,6 +46,8 @@ const POSITION_KEY = 'sales-recruitment-launcher-position'
 // 入口与视口边缘、面板与入口之间的间距。
 const EDGE_GAP = 12
 const PANEL_GAP = 10
+// 面板按原招募弹窗的宽度排版，保持原有视觉比例。
+const PANEL_WIDTH = 560
 // 指针移动超过该距离才视为拖动，避免点击时轻微抖动被当成拖动。
 const DRAG_THRESHOLD = 4
 
@@ -59,6 +64,10 @@ const position = ref<{ x: number; y: number } | null>(readPosition())
 const launcherRect = ref<DOMRect | null>(null)
 const viewport = ref({ width: window.innerWidth, height: window.innerHeight })
 const dragging = ref(false)
+const panelInnerRef = ref<HTMLElement | null>(null)
+// 内容在设计宽度下的自然高度，用于计算缩放比例。
+const contentHeight = ref(0)
+let contentObserver: ResizeObserver | null = null
 let dragStart: { pointerX: number; pointerY: number; x: number; y: number } | null = null
 
 // 1. 登录后所有页面（用户工作台和管理后台）展示；匿名页面读不到鉴权配置，不展示。
@@ -85,11 +94,19 @@ watch(() => route.path, () => {
   open.value = false
 })
 
-watch(open, (value) => {
-  // 5. 每次展开回到介绍页，并按入口当前位置计算面板位置。
+watch(open, async (value) => {
+  // 5. 每次展开回到介绍页，按入口当前位置定位，并持续测量内容高度（图片加载、切页都会改变高度）。
+  contentObserver?.disconnect()
+  contentObserver = null
   if (!value) return
   page.value = 'intro'
   measureLauncher()
+  await nextTick()
+  if (!panelInnerRef.value) return
+  contentObserver = new ResizeObserver(() => {
+    contentHeight.value = panelInnerRef.value?.offsetHeight ?? 0
+  })
+  contentObserver.observe(panelInnerRef.value)
 })
 
 function readPosition(): { x: number; y: number } | null {
@@ -179,6 +196,7 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown)
 })
 onBeforeUnmount(() => {
+  contentObserver?.disconnect()
   window.removeEventListener('resize', onResize)
   window.removeEventListener('keydown', onKeydown)
 })
@@ -189,27 +207,39 @@ const widgetStyle = computed(() => {
   return { left: `${position.value.x}px`, top: `${position.value.y}px`, right: 'auto', bottom: 'auto' }
 })
 
-const panelStyle = computed(() => {
-  // 1. 面板宽度固定、不超过视口；高度取入口上方或下方较大的可用空间。
+const panelLayout = computed(() => {
+  // 1. 缩放比例同时受视口宽度和可用高度约束，内容完整显示、不出现滚动条。
   const rect = launcherRect.value
   const { width: vw, height: vh } = viewport.value
-  const width = Math.min(380, vw - EDGE_GAP * 2)
-  if (!rect) return { width: `${width}px`, right: `${EDGE_GAP}px`, bottom: `${EDGE_GAP}px` }
-  const spaceAbove = rect.top - PANEL_GAP - EDGE_GAP
-  const spaceBelow = vh - rect.bottom - PANEL_GAP - EDGE_GAP
+  const spaceAbove = rect ? rect.top - PANEL_GAP - EDGE_GAP : vh - EDGE_GAP * 2
+  const spaceBelow = rect ? vh - rect.bottom - PANEL_GAP - EDGE_GAP : 0
   const openUp = spaceAbove >= spaceBelow
+  const availableHeight = Math.max(openUp ? spaceAbove : spaceBelow, 120)
+  const widthScale = (vw - EDGE_GAP * 2) / PANEL_WIDTH
+  const heightScale = contentHeight.value > 0 ? availableHeight / contentHeight.value : 1
+  const scale = Math.min(1, widthScale, heightScale)
+  return { rect, vw, vh, openUp, scale, width: PANEL_WIDTH * scale, height: contentHeight.value * scale }
+})
+
+const panelStyle = computed(() => {
+  // 1. 外层尺寸等于缩放后的内容尺寸，贴着入口展开。
+  const { rect, vw, vh, openUp, width, height } = panelLayout.value
+  const style: Record<string, string> = { width: `${width}px` }
+  if (height > 0) style.height = `${height}px`
+  if (!rect) return { ...style, right: `${EDGE_GAP}px`, bottom: `${EDGE_GAP}px` }
   // 2. 入口在屏幕左半边时面板左对齐入口，右半边时右对齐入口，再夹回视口内。
   const alignedLeft = rect.left + rect.width / 2 < vw / 2 ? rect.left : rect.right - width
-  const left = Math.min(Math.max(alignedLeft, EDGE_GAP), vw - width - EDGE_GAP)
-  const style: Record<string, string> = {
-    width: `${width}px`,
-    left: `${left}px`,
-    maxHeight: `${Math.min(560, openUp ? spaceAbove : spaceBelow)}px`
-  }
+  style.left = `${Math.min(Math.max(alignedLeft, EDGE_GAP), vw - width - EDGE_GAP)}px`
   if (openUp) style.bottom = `${vh - rect.top + PANEL_GAP}px`
   else style.top = `${rect.bottom + PANEL_GAP}px`
   return style
 })
+
+const innerStyle = computed(() => ({
+  // 1. 内层始终按设计宽度排版，只做视觉缩放，不改变内容布局。
+  width: `${PANEL_WIDTH}px`,
+  transform: `scale(${panelLayout.value.scale})`
+}))
 </script>
 
 <style scoped>
@@ -223,9 +253,10 @@ const panelStyle = computed(() => {
 .recruitment-launcher strong { font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recruitment-launcher small { font-size: 11px; line-height: 1.3; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .75; }
 .recruitment-widget button:focus-visible, .recruitment-panel button:focus-visible { outline: 3px solid #d66b4d; outline-offset: 3px; }
-/* 3. 展开面板：贴着入口出现，不遮罩页面，内容超出时面板内部滚动。 */
-.recruitment-panel { position: fixed; z-index: 36; overflow-y: auto; overscroll-behavior: contain; border-radius: 18px; border: 1px solid #f2cdbd; box-shadow: 0 16px 48px #2c2a2433; background: white; animation: recruitment-pop .16s ease-out; }
-.recruitment-panel-close { position: sticky; top: 8px; float: right; margin: 8px 8px -36px 0; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #ffffffd9; color: #a24a33; border: 1px solid #f2cdbd; }
+/* 3. 展开面板：贴着入口出现，不遮罩页面；内容按比例缩放完整显示，不滚动。 */
+.recruitment-panel { position: fixed; z-index: 36; overflow: hidden; border-radius: 24px; box-shadow: 0 20px 60px #2c2a2440, 0 0 0 1px #f2cdbd; background: white; animation: recruitment-pop .18s ease-out; }
+.recruitment-panel-inner { position: relative; transform-origin: top left; }
+.recruitment-panel-close { position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff9df; color: #776024; border: 1px solid #d5bc7166; }
 @keyframes recruitment-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
 /* 4. 手机端只保留图标和标题，减少对页面内容的遮挡。 */
 @media (max-width: 640px) {
@@ -235,6 +266,5 @@ const panelStyle = computed(() => {
 }
 /* 5. 深色模式使用首页暖黑底色。 */
 :global(.dark .recruitment-launcher) { color: #e9ad96; background: #26261f; border-color: #3a382f; box-shadow: 0 4px 16px #00000040; }
-:global(.dark .recruitment-panel) { border-color: #3a382f; box-shadow: 0 16px 48px #00000066; }
-:global(.dark .recruitment-panel-close) { color: #e9ad96; background: #1b1c19d9; border-color: #3a382f; }
+:global(.dark .recruitment-panel) { box-shadow: 0 20px 60px #00000080, 0 0 0 1px #3a382f; }
 </style>
