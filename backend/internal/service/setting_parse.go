@@ -983,6 +983,15 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.AccountQuotaNotifyEmails = []NotifyEmailEntry{}
 	}
 
+	// 账号故障通知：1. 读取开关；2. 解析邮箱列表，空值返回空数组便于前端编辑。
+	result.AccountErrorNotifyEnabled = settings[SettingKeyAccountErrorNotifyEnabled] == "true"
+	if raw := strings.TrimSpace(settings[SettingKeyAccountErrorNotifyEmails]); raw != "" {
+		result.AccountErrorNotifyEmails = ParseNotifyEmails(raw)
+	}
+	if result.AccountErrorNotifyEmails == nil {
+		result.AccountErrorNotifyEmails = []NotifyEmailEntry{}
+	}
+
 	// 系统层默认 platform quota（修复 Bug B：parseSettings 不填充导致回显恒为 nil）
 	if raw := settings[SettingKeyDefaultPlatformQuotas]; raw != "" {
 		parsed := map[string]*DefaultPlatformQuotaSetting{}

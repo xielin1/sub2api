@@ -302,6 +302,8 @@ type UpdateSettingsRequest struct {
 	SubscriptionExpiryNotifyEnabled *bool                   `json:"subscription_expiry_notify_enabled"`
 	AccountQuotaNotifyEnabled       *bool                   `json:"account_quota_notify_enabled"`
 	AccountQuotaNotifyEmails        *[]dto.NotifyEmailEntry `json:"account_quota_notify_emails"`
+	AccountErrorNotifyEnabled       *bool                   `json:"account_error_notify_enabled"`
+	AccountErrorNotifyEmails        *[]dto.NotifyEmailEntry `json:"account_error_notify_emails"`
 
 	// Payment configuration (integrated into settings, full replace)
 	PaymentEnabled                   *bool    `json:"payment_enabled"`
@@ -2003,6 +2005,19 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.AccountQuotaNotifyEmails
 		}(),
+		// 账号故障通知：未传字段沿用原值。
+		AccountErrorNotifyEnabled: func() bool {
+			if req.AccountErrorNotifyEnabled != nil {
+				return *req.AccountErrorNotifyEnabled
+			}
+			return previousSettings.AccountErrorNotifyEnabled
+		}(),
+		AccountErrorNotifyEmails: func() []service.NotifyEmailEntry {
+			if req.AccountErrorNotifyEmails != nil {
+				return dto.NotifyEmailEntriesToService(*req.AccountErrorNotifyEmails)
+			}
+			return previousSettings.AccountErrorNotifyEmails
+		}(),
 		ChannelMonitorEnabled: func() bool {
 			if req.ChannelMonitorEnabled != nil {
 				return *req.ChannelMonitorEnabled
@@ -2482,6 +2497,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		SubscriptionExpiryNotifyEnabled:                        updatedSettings.SubscriptionExpiryNotifyEnabled,
 		AccountQuotaNotifyEnabled:                              updatedSettings.AccountQuotaNotifyEnabled,
 		AccountQuotaNotifyEmails:                               dto.NotifyEmailEntriesFromService(updatedSettings.AccountQuotaNotifyEmails),
+		AccountErrorNotifyEnabled:                              updatedSettings.AccountErrorNotifyEnabled,
+		AccountErrorNotifyEmails:                               dto.NotifyEmailEntriesFromService(updatedSettings.AccountErrorNotifyEmails),
 		PaymentEnabled:                                         updatedPaymentCfg.Enabled,
 		PaymentMinAmount:                                       updatedPaymentCfg.MinAmount,
 		PaymentMaxAmount:                                       updatedPaymentCfg.MaxAmount,

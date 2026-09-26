@@ -943,6 +943,15 @@ export default {
         addEmail: 'Add Email',
         emailPlaceholder: 'Enter email address',
       },
+      accountErrorNotify: {
+        title: 'Account Error Notification',
+        description: 'Email a summary when upstream accounts enter the error state (stop scheduling); an account is notified again if it fails after recovering',
+        enabled: 'Enable Account Error Notification',
+        emails: 'Notification Emails',
+        emailsHint: 'Checked every minute; each ongoing failure is notified once. Leave empty to disable',
+        addEmail: 'Add Email',
+        emailPlaceholder: 'Enter email address',
+      },
       subscriptionExpiryNotify: {
         title: 'Subscription Expiry Reminder',
         description: 'Control whether users receive subscription expiry reminder emails.',

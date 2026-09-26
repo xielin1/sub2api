@@ -739,6 +739,10 @@ const (
 	SettingKeyAccountQuotaNotifyEnabled = "account_quota_notify_enabled" // 全局开关
 	SettingKeyAccountQuotaNotifyEmails  = "account_quota_notify_emails"  // 管理员通知邮箱列表（JSON 数组）
 
+	// 账号故障通知
+	SettingKeyAccountErrorNotifyEnabled = "account_error_notify_enabled" // 全局开关
+	SettingKeyAccountErrorNotifyEmails  = "account_error_notify_emails"  // 故障通知邮箱列表（JSON 数组）
+
 	// Web Search Emulation
 	SettingKeyWebSearchEmulationConfig = "web_search_emulation_config" // JSON 配置
 )

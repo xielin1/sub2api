@@ -938,6 +938,15 @@ export default {
         addEmail: '添加邮箱',
         emailPlaceholder: '输入邮箱地址',
       },
+      accountErrorNotify: {
+        title: '账号故障通知',
+        description: '上游账号进入错误状态（停止调度）时，汇总发送邮件通知；账号恢复后再次出错会重新通知',
+        enabled: '启用账号故障通知',
+        emails: '通知邮箱',
+        emailsHint: '每分钟检查一次，同一账号持续故障只通知一次；留空则不发送',
+        addEmail: '添加邮箱',
+        emailPlaceholder: '输入邮箱地址',
+      },
       subscriptionExpiryNotify: {
         title: '订阅到期提醒',
         description: '控制是否向用户发送订阅即将到期的邮件提醒。',

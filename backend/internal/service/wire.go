@@ -399,6 +399,13 @@ func ProvideUsageCleanupService(repo UsageCleanupRepository, timingWheel *Timing
 	return svc
 }
 
+// ProvideAccountErrorNotifyService 创建并启动账号故障通知服务。
+func ProvideAccountErrorNotifyService(accountRepo AccountRepository, settingRepo SettingRepository, emailService *EmailService, notificationEmailService *NotificationEmailService) *AccountErrorNotifyService {
+	svc := NewAccountErrorNotifyService(accountRepo, settingRepo, emailService, notificationEmailService)
+	svc.Start()
+	return svc
+}
+
 // ProvideAccountExpiryService creates and starts AccountExpiryService.
 func ProvideAccountExpiryService(accountRepo AccountRepository) *AccountExpiryService {
 	svc := NewAccountExpiryService(accountRepo, time.Minute)
@@ -951,6 +958,7 @@ var ProviderSet = wire.NewSet(
 	ProvideTokenRefreshService,
 	wire.Bind(new(GrokOAuthReconciler), new(*TokenRefreshService)),
 	ProvideAccountExpiryService,
+	ProvideAccountErrorNotifyService,
 	ProvideOpenAICodexVersionSyncService,
 	ProvideClaudeCodeVersionSyncService,
 	ProvideProxyExpiryService,

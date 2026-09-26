@@ -586,6 +586,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if !equalNotifyEmailEntries(before.AccountQuotaNotifyEmails, after.AccountQuotaNotifyEmails) {
 		changed = append(changed, "account_quota_notify_emails")
 	}
+	if before.AccountErrorNotifyEnabled != after.AccountErrorNotifyEnabled {
+		changed = append(changed, "account_error_notify_enabled")
+	}
+	if !equalNotifyEmailEntries(before.AccountErrorNotifyEmails, after.AccountErrorNotifyEmails) {
+		changed = append(changed, "account_error_notify_emails")
+	}
 	if before.ChannelMonitorEnabled != after.ChannelMonitorEnabled {
 		changed = append(changed, "channel_monitor_enabled")
 	}

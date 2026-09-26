@@ -742,6 +742,9 @@ export interface SystemSettings {
   subscription_expiry_notify_enabled: boolean;
   account_quota_notify_enabled: boolean;
   account_quota_notify_emails: NotifyEmailEntry[];
+  // 账号故障通知
+  account_error_notify_enabled: boolean;
+  account_error_notify_emails: NotifyEmailEntry[];
 
   // Channel Monitor feature switch
   channel_monitor_enabled: boolean;
@@ -1053,6 +1056,9 @@ export interface UpdateSettingsRequest {
   subscription_expiry_notify_enabled?: boolean;
   account_quota_notify_enabled?: boolean;
   account_quota_notify_emails?: NotifyEmailEntry[];
+  // 账号故障通知
+  account_error_notify_enabled?: boolean;
+  account_error_notify_emails?: NotifyEmailEntry[];
 
   // Channel Monitor feature switch
   channel_monitor_enabled?: boolean;

@@ -9101,6 +9101,82 @@
               </div>
             </div>
           </div>
+
+          <!-- Account Error Notification -->
+          <div class="card">
+            <div
+              class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+            >
+              <h3 class="text-base font-medium text-gray-900 dark:text-white">
+                {{ t("admin.settings.accountErrorNotify.title") }}
+              </h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ t("admin.settings.accountErrorNotify.description") }}
+              </p>
+            </div>
+            <div class="px-6 py-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <label
+                  class="mb-0 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >{{ t("admin.settings.accountErrorNotify.enabled") }}</label
+                >
+                <Toggle v-model="form.account_error_notify_enabled" />
+              </div>
+              <div v-if="form.account_error_notify_enabled">
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >{{ t("admin.settings.accountErrorNotify.emails") }}</label
+                >
+                <div class="space-y-2">
+                  <div
+                    v-for="(entry, index) in form.account_error_notify_emails ||
+                    []"
+                    :key="index"
+                    class="flex items-center gap-2"
+                  >
+                    <label
+                      class="relative inline-flex items-center cursor-pointer shrink-0"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="!entry.disabled"
+                        @change="entry.disabled = !entry.disabled"
+                        class="sr-only peer"
+                      />
+                      <div
+                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-gray-500 peer-checked:bg-primary-600"
+                      ></div>
+                    </label>
+                    <input
+                      v-model="entry.email"
+                      type="email"
+                      class="input flex-1"
+                      :placeholder="
+                        t('admin.settings.accountErrorNotify.emailPlaceholder')
+                      "
+                    />
+                    <button
+                      @click="form.account_error_notify_emails.splice(index, 1)"
+                      class="btn btn-secondary px-2"
+                      type="button"
+                    >
+                      <Icon name="x" size="xs" class="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    @click="addAccountErrorNotifyEmail"
+                    class="btn btn-secondary btn-sm"
+                    type="button"
+                  >
+                    + {{ t("admin.settings.accountErrorNotify.addEmail") }}
+                  </button>
+                </div>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t("admin.settings.accountErrorNotify.emailsHint") }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- /Tab: Email -->
 
@@ -10295,6 +10371,9 @@ const form = reactive<SettingsForm>({
   subscription_expiry_notify_enabled: true,
   account_quota_notify_enabled: false,
   account_quota_notify_emails: [] as NotifyEmailEntry[],
+  // 账号故障通知
+  account_error_notify_enabled: false,
+  account_error_notify_emails: [] as NotifyEmailEntry[],
   // Channel Monitor feature switch
   channel_monitor_enabled: true,
   channel_monitor_mode: 'v1' as 'v1' | 'v2',
@@ -10938,6 +11017,18 @@ const addQuotaNotifyEmail = () => {
     form.account_quota_notify_emails = [];
   }
   form.account_quota_notify_emails.push({
+    email: "",
+    disabled: false,
+    verified: true,
+  });
+};
+
+// 1. 新增一行账号故障通知邮箱；2. 管理员手填邮箱视为已验证。
+const addAccountErrorNotifyEmail = () => {
+  if (!form.account_error_notify_emails) {
+    form.account_error_notify_emails = [];
+  }
+  form.account_error_notify_emails.push({
     email: "",
     disabled: false,
     verified: true,
@@ -12021,6 +12112,11 @@ async function saveSettings() {
       account_quota_notify_enabled: form.account_quota_notify_enabled,
       account_quota_notify_emails: (
         form.account_quota_notify_emails || []
+      ).filter((e) => e.email.trim() !== ""),
+      // 账号故障通知：去掉空邮箱行
+      account_error_notify_enabled: form.account_error_notify_enabled,
+      account_error_notify_emails: (
+        form.account_error_notify_emails || []
       ).filter((e) => e.email.trim() !== ""),
       // Channel Monitor feature switch
       channel_monitor_enabled: form.channel_monitor_enabled,
