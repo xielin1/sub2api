@@ -924,7 +924,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"quota_remaining":     "20.00",
 			"quota_threshold":     "20%",
 			"account_count":       "1",
-			"account_list":        "#1001 openai-main (openai)\n错误：401 Unauthorized",
+			"account_list":        "[错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
 			"triggered_at":        "2026-05-20 12:00:00",
 			"group_name":          "默认分组",
 			"moderation_category": "violence",
@@ -974,7 +974,7 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"quota_remaining":     "20.00",
 		"quota_threshold":     "20%",
 		"account_count":       "1",
-		"account_list":        "#1001 openai-main (openai)\nError: 401 Unauthorized",
+		"account_list":        "[错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
 		"triggered_at":        "2026-05-20 12:00:00",
 		"group_name":          "Default group",
 		"moderation_category": "violence",
@@ -1111,7 +1111,7 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 	NotificationEmailEventAccountErrorAlert: {
 		Event:       NotificationEmailEventAccountErrorAlert,
 		Label:       "Account error alert",
-		Description: "Sent to configured account error notification emails when upstream accounts enter the error state.",
+		Description: "Sent to configured account error notification emails when upstream accounts enter the error state, become temporarily unavailable, or hit frequent upstream 5xx errors.",
 		Category:    "admin",
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
@@ -1337,17 +1337,17 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 	},
 	NotificationEmailEventAccountErrorAlert: {
 		notificationEmailDefaultLocale: {
-			Subject: "[{{site_name}}] Account error alert - {{account_count}} account(s)",
-			HTML: notificationEmailCard("#dc2626", "Account error alert", `
-<p>{{account_count}} upstream account(s) entered the error state and stopped scheduling.</p>
+			Subject: "[{{site_name}}] Account alert - {{account_count}} account(s)",
+			HTML: notificationEmailCard("#dc2626", "Account alert", `
+<p>{{account_count}} upstream account(s) need attention: error state, temporarily unavailable (rate limit / overload / temporary unschedulable), or frequent upstream 5xx.</p>
 <p><strong>Detected at</strong>: {{triggered_at}}</p>
 <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#f9fafb;padding:12px;border-radius:6px;">{{account_list}}</div>
 <p>Please check these accounts in the admin console.</p>`),
 		},
 		notificationEmailLocaleChinese: {
-			Subject: "[{{site_name}}] 账号故障告警 - {{account_count}} 个账号",
-			HTML: notificationEmailCard("#dc2626", "账号故障告警", `
-<p>有 {{account_count}} 个上游账号进入错误状态，已停止调度。</p>
+			Subject: "[{{site_name}}] 账号异常告警 - {{account_count}} 个账号",
+			HTML: notificationEmailCard("#dc2626", "账号异常告警", `
+<p>有 {{account_count}} 个上游账号出现异常：错误停用、暂时不可用（限流/过载/临时停调度）或上游 5xx 频繁。</p>
 <p><strong>发现时间</strong>：{{triggered_at}}</p>
 <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#f9fafb;padding:12px;border-radius:6px;">{{account_list}}</div>
 <p>请到管理后台检查这些账号。</p>`),

@@ -399,9 +399,9 @@ func ProvideUsageCleanupService(repo UsageCleanupRepository, timingWheel *Timing
 	return svc
 }
 
-// ProvideAccountErrorNotifyService 创建并启动账号故障通知服务。
-func ProvideAccountErrorNotifyService(accountRepo AccountRepository, settingRepo SettingRepository, emailService *EmailService, notificationEmailService *NotificationEmailService) *AccountErrorNotifyService {
-	svc := NewAccountErrorNotifyService(accountRepo, settingRepo, emailService, notificationEmailService)
+// ProvideAccountErrorNotifyService 创建并启动账号异常通知服务。
+func ProvideAccountErrorNotifyService(accountRepo AccountRepository, opsRepo OpsRepository, settingRepo SettingRepository, emailService *EmailService, notificationEmailService *NotificationEmailService) *AccountErrorNotifyService {
+	svc := NewAccountErrorNotifyService(accountRepo, opsRepo, settingRepo, emailService, notificationEmailService)
 	svc.Start()
 	return svc
 }
