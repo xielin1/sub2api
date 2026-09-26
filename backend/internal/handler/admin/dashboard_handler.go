@@ -76,6 +76,23 @@ func parseOptionalBoolDashboardFilter(c *gin.Context, name string) (*bool, error
 	return &value, nil
 }
 
+// GetPublicStats 返回首页公开展示的累计服务数据（仅累计请求数与 Token 数）
+// GET /api/v1/public/stats
+func (h *DashboardHandler) GetPublicStats(c *gin.Context) {
+	// 1. 复用带缓存的仪表盘统计，避免匿名访问直接打数据库
+	stats, err := h.dashboardService.GetDashboardStats(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	// 2. 只返回白名单字段，不暴露用户数、金额等经营数据
+	response.Success(c, gin.H{
+		"total_requests": stats.TotalRequests,
+		"total_tokens":   stats.TotalTokens,
+	})
+}
+
 // GetStats handles getting dashboard statistics
 // GET /api/v1/admin/dashboard/stats
 func (h *DashboardHandler) GetStats(c *gin.Context) {

@@ -154,6 +154,17 @@
             <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
           </router-link>
 
+          <!-- 服务状态入口：渠道监控开启时对访客公开 -->
+          <router-link
+            v-if="channelMonitorEnabled"
+            to="/monitor"
+            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            :title="t('home.trust.statusNav')"
+          >
+            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+            <span class="hidden sm:inline">{{ t('home.trust.statusNav') }}</span>
+          </router-link>
+
           <!-- Theme Toggle -->
           <button
             @click="toggleTheme"
@@ -264,7 +275,8 @@
                     <span class="btn-minimize"></span>
                     <span class="btn-maximize"></span>
                   </div>
-                  <span class="terminal-title">aphelion ~ terminal</span>
+                  <!-- 1. 示例终端沿用站点配置名称，避免出现旧品牌。 -->
+                  <span class="terminal-title">{{ siteName }} ~ terminal</span>
                 </div>
                 <!-- Terminal content -->
                 <div class="terminal-body">
@@ -315,6 +327,86 @@
         </div>
       </div>
     </main>
+
+    <!-- 信任区块：累计数据 / 模型价格 / 痛点 / 最近更新 -->
+    <section class="relative z-10 px-6 pb-16">
+      <div class="mx-auto flex w-full max-w-5xl flex-col gap-12">
+        <!-- 1. 累计服务数据（接口失败时整块不渲染） -->
+        <div v-if="publicStats" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="trust-card text-center">
+            <p class="text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_requests) }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.totalRequests') }}</p>
+          </div>
+          <div class="trust-card text-center">
+            <p class="text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_tokens) }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.totalTokens') }}</p>
+          </div>
+          <router-link v-if="channelMonitorEnabled" to="/monitor" class="trust-card text-center transition-colors hover:border-[#d66b4d]/50">
+            <!-- 真实数据：各监控 7 天可用率均值；全部正常为绿点，否则为黄点 -->
+            <p class="flex items-center justify-center gap-2 text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">
+              <span class="h-3 w-3 rounded-full" :class="monitorSummary?.allOperational ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+              {{ monitorSummary ? `${monitorSummary.availability.toFixed(2)}%` : '-' }}
+            </p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.statusDesc') }}</p>
+          </router-link>
+        </div>
+
+        <!-- 2. 支持的模型与价格（取模型广场数据，最多展示 8 个） -->
+        <div v-if="plazaModels.length > 0">
+          <div class="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.trust.modelsTitle') }}</h2>
+              <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.modelsDesc') }}</p>
+            </div>
+            <router-link to="/model-plaza" class="shrink-0 text-sm font-medium text-[#d66b4d] hover:underline">
+              {{ t('home.trust.viewAllModels') }}
+            </router-link>
+          </div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div v-for="m in plazaModels" :key="m.key" class="trust-card flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate font-mono text-sm font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ m.name }}</p>
+                <p class="text-xs text-gray-500 dark:text-[#8f897b]">{{ m.group }}</p>
+              </div>
+              <div class="shrink-0 text-right text-xs text-gray-600 dark:text-[#c9c4b6]">
+                <p>{{ t('home.trust.input') }} ${{ m.input }} / {{ t('home.trust.output') }} ${{ m.output }}</p>
+                <p class="text-gray-400 dark:text-[#8f897b]">{{ t('home.trust.perMillion') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 用户痛点（复用已有文案） -->
+        <div>
+          <h2 class="mb-5 text-center text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.painPoints.title') }}</h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div v-for="key in painPointKeys" :key="key" class="trust-card">
+              <p class="font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ t(`home.painPoints.items.${key}.title`) }}</p>
+              <p class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-[#8f897b]">{{ t(`home.painPoints.items.${key}.desc`) }}</p>
+            </div>
+          </div>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <span v-for="tag in featureTagKeys" :key="tag" class="rounded-full border border-[#d66b4d]/40 px-3 py-1 text-xs font-medium text-[#b4523a] dark:text-[#e79878]">
+              {{ t(`home.tags.${tag}`) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 4. 最近更新（后台公告，无公开公告时不渲染） -->
+        <div v-if="announcements.length > 0">
+          <h2 class="mb-5 text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.trust.updatesTitle') }}</h2>
+          <ul class="flex flex-col gap-3">
+            <li v-for="a in announcements" :key="a.id" class="trust-card">
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ a.title }}</p>
+                <span class="shrink-0 text-xs text-gray-400 dark:text-[#8f897b]">{{ a.created_at.slice(0, 10) }}</span>
+              </div>
+              <p class="mt-1 line-clamp-2 whitespace-pre-line text-sm text-gray-500 dark:text-[#8f897b]">{{ a.content }}</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
     <!-- 联系客服弹窗：沿用公告弹窗的暖色头部与卡片尺寸 -->
     <BaseDialog
@@ -415,15 +507,18 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
 import { useClipboard } from '@/composables/useClipboard'
-import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
+import { FeatureFlags, isFeatureFlagEnabled, isChannelMonitorV1Mode } from '@/utils/featureFlags'
+import { getModelPlaza } from '@/api/modelPlaza'
+import { list as listChannelMonitors } from '@/api/channelMonitor'
+import { getPublicAnnouncements, getPublicStats, type PublicAnnouncement, type PublicStats } from '@/api/publicInfo'
 
 const { t } = useI18n()
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-// Site settings - directly from appStore (already initialized from injected config)
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Aphelion')
+// 1. 优先使用已注入的站点配置，未配置时统一显示 mdai。
+const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'mdai')
 const siteLogo = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
 const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
@@ -476,6 +571,71 @@ const userInitial = computed(() => {
   return user.email.charAt(0).toUpperCase()
 })
 
+// 服务状态入口：仅 V1 监控模式开启时展示（V2 为登录后被动视图）
+const channelMonitorEnabled = computed(() => isChannelMonitorV1Mode())
+
+// 首页信任区块数据：接口失败时对应区块不渲染，不影响首页主体
+const publicStats = ref<PublicStats | null>(null)
+const monitorSummary = ref<{ availability: number; allOperational: boolean } | null>(null)
+const announcements = ref<PublicAnnouncement[]>([])
+const plazaModels = ref<{ key: string; name: string; group: string; input: string; output: string }[]>([])
+const painPointKeys = ['expensive', 'complex', 'unstable', 'noControl']
+const featureTagKeys = ['subscriptionToApi', 'stickySession', 'realtimeBilling']
+
+// 大数字压缩显示：1.2 万 / 3.4 亿（英文 1.2K / 3.4B）
+function formatCompact(n: number) {
+  return new Intl.NumberFormat(document.documentElement.lang || undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+}
+
+// 单价（USD/token）换算为每百万 token 价格，乘分组倍率得到实付价
+function perMillion(price: number | null | undefined, rate: number) {
+  if (price == null) return '-'
+  return (price * 1_000_000 * rate).toFixed(2)
+}
+
+async function loadTrustData() {
+  // 1. 累计数据与公告：互不依赖，并行请求
+  getPublicStats().then((v) => (publicStats.value = v)).catch(() => {})
+  getPublicAnnouncements().then((v) => (announcements.value = v)).catch(() => {})
+  // 2. 服务状态：取各监控 7 天可用率均值，无监控数据时卡片显示 "-"
+  if (channelMonitorEnabled.value) {
+    listChannelMonitors()
+      .then((res) => {
+        const items = res.items || []
+        if (items.length === 0) return
+        monitorSummary.value = {
+          availability: items.reduce((sum, it) => sum + it.availability_7d, 0) / items.length,
+          allOperational: items.every((it) => it.primary_status === 'operational'),
+        }
+      })
+      .catch(() => {})
+  }
+  // 3. 模型价格：广场未公开（关闭或需登录）时跳过
+  if (!showModelPlazaEntry.value) return
+  try {
+    const plaza = await getModelPlaza()
+    const seen = new Set<string>()
+    const rows: typeof plazaModels.value = []
+    for (const g of plaza.groups) {
+      for (const m of g.models) {
+        // 只展示按 token 计费、且同名模型只出现一次
+        if (seen.has(m.name) || !m.pricing || m.pricing.billing_mode !== 'token') continue
+        seen.add(m.name)
+        rows.push({
+          key: `${g.id}-${m.name}`,
+          name: m.name,
+          group: g.name,
+          input: perMillion(m.pricing.input_price, g.rate_multiplier),
+          output: perMillion(m.pricing.output_price, g.rate_multiplier),
+        })
+      }
+    }
+    plazaModels.value = rows.slice(0, 8)
+  } catch {
+    plazaModels.value = []
+  }
+}
+
 // Current year for footer
 const currentYear = computed(() => new Date().getFullYear())
 
@@ -506,12 +666,19 @@ onMounted(() => {
 
   // Ensure public settings are loaded (will use cache if already loaded from injected config)
   if (!appStore.publicSettingsLoaded) {
-    appStore.fetchPublicSettings()
+    appStore.fetchPublicSettings().then(() => loadTrustData())
+  } else {
+    void loadTrustData()
   }
 })
 </script>
 
 <style scoped>
+/* 信任区块卡片：与首页暖色主题一致 */
+.trust-card {
+  @apply rounded-xl border border-gray-200/70 bg-white/70 p-4 backdrop-blur-sm dark:border-[#3a382f] dark:bg-white/5;
+}
+
 /* ==========================================================================
    Aphelion theme: the far point of the orbit — deep space, a distant sun,
    and a station that keeps running out here in the dark.

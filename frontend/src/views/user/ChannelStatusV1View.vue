@@ -1,5 +1,8 @@
 <template>
-  <AppLayout>
+  <!-- 1. 已登录：套后台布局；2. 未登录访客：使用模型广场同款独立导航条 -->
+  <component :is="isAuthenticated ? AppLayout : 'div'" :class="isAuthenticated ? '' : 'min-h-screen bg-gray-50 dark:bg-dark-950'">
+    <PlazaNavBar v-if="!isAuthenticated" />
+    <main :class="isAuthenticated ? '' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8'">
     <MonitorHero
       :overall-status="overallStatus"
       :interval-seconds="DEFAULT_INTERVAL_SECONDS"
@@ -25,7 +28,8 @@
       :title="detailTitle"
       @close="closeDetail"
     />
-  </AppLayout>
+    </main>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +44,8 @@ import {
   type UserMonitorDetail,
 } from '@/api/channelMonitor'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import PlazaNavBar from '@/components/modelPlaza/PlazaNavBar.vue'
+import { useAuthStore } from '@/stores/auth'
 import MonitorHero, {
   type MonitorWindow,
   type OverallStatus,
@@ -51,6 +57,9 @@ import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+// 访客访问时不渲染后台侧边栏
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 // ── State ──
 const items = ref<UserMonitorView[]>([])
@@ -161,6 +170,8 @@ watch(
 )
 
 onMounted(() => {
+  // 访客直接打开状态页时，导航条需要站点名/Logo
+  void appStore.fetchPublicSettings()
   void reload(false)
   if (appStore.cachedPublicSettings?.channel_monitor_enabled !== false) {
     autoRefresh.setEnabled(autoRefresh.enabled.value)

@@ -508,7 +508,8 @@ const routes: RouteRecordRaw[] = [
     name: 'ChannelStatus',
     component: () => import('@/views/user/ChannelStatusView.vue'),
     meta: {
-      requiresAuth: true,
+      // 服务状态页对访客公开，用于展示可用率建立信任
+      requiresAuth: false,
       requiresAdmin: false,
       title: 'Channel Status',
       titleKey: 'nav.channelStatus'

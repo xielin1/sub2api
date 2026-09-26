@@ -25,7 +25,7 @@ export default {
     "settingsHint": "Commission tiers and rules are editable examples. Confirm them and provide your real WeChat contact before enabling. This feature displays recruitment information; it does not calculate or pay commissions.",
     "floatingEnabled": "Show floating recruitment button",
     "preview": "Preview recruitment",
-    "visibilityHint": "Recruitment is only available in signed-in workspaces. It is hidden on the public homepage, login and registration pages. The fields below configure the recruitment introduction.",
+    "visibilityHint": "Once signed in, the recruitment button stays on every page, including the admin console. It is hidden on the public homepage, login and registration pages. The fields below configure the recruitment introduction.",
     "fields": {
         "title": "Recruitment title",
         "subtitle": "Subtitle",
@@ -76,6 +76,19 @@ export default {
       contactHint: 'Questions about access, billing or your account? Reach out any time.',
       contactLinkLabel: 'Live support',
       contactTextLabel: 'Contact details (click to select all)'
+    },
+    trust: {
+      statusNav: 'Status',
+      totalRequests: 'Requests served',
+      totalTokens: 'Tokens processed',
+      statusDesc: '7-day average availability',
+      modelsTitle: 'Models & Pricing',
+      modelsDesc: 'Pay as you go with transparent pricing',
+      viewAllModels: 'View all models',
+      input: 'In',
+      output: 'Out',
+      perMillion: 'USD / 1M tokens',
+      updatesTitle: 'Recent Updates'
     },
     tags: {
       subscriptionToApi: 'Subscription to API',

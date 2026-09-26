@@ -298,6 +298,32 @@ func (s *AnnouncementService) ListForUser(ctx context.Context, userID int64, unr
 	return out, nil
 }
 
+// ListPublic 返回匿名访客可见的公告（首页「最近更新」使用）。
+// 1. 只取当前生效的公告；
+// 2. 只保留未配置定向规则（面向所有用户）的公告，避免泄露定向内容；
+// 3. 按 ID 倒序截取前 limit 条。
+func (s *AnnouncementService) ListPublic(ctx context.Context, limit int) ([]Announcement, error) {
+	// 1. 查询当前时间生效的公告（仓储已按 ID 倒序）
+	now := time.Now()
+	anns, err := s.announcementRepo.ListActive(ctx, now)
+	if err != nil {
+		return nil, fmt.Errorf("list active announcements: %w", err)
+	}
+
+	// 2. 过滤掉定向公告，并截取前 limit 条
+	out := make([]Announcement, 0, limit)
+	for i := range anns {
+		if !anns[i].IsActiveAt(now) || len(anns[i].Targeting.AnyOf) > 0 {
+			continue
+		}
+		out = append(out, anns[i])
+		if len(out) >= limit {
+			break
+		}
+	}
+	return out, nil
+}
+
 func (s *AnnouncementService) MarkRead(ctx context.Context, userID, announcementID int64) error {
 	// 安全：仅允许标记当前用户“可见”的公告
 	user, err := s.userRepo.GetByID(ctx, userID)

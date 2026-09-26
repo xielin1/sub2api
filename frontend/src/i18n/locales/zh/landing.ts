@@ -25,7 +25,7 @@ export default {
     "settingsHint": "佣金比例和规则为可编辑示例，启用前请确认并填写真实微信联系方式。此功能只展示招募信息，不自动计算或发放现金佣金。",
     "floatingEnabled": "展示右下角招募入口",
     "preview": "预览招募页",
-    "visibilityHint": "仅登录后的工作台展示招募入口；默认首页、登录页和注册页不展示。下方编辑的是招募弹窗的首页内容。",
+    "visibilityHint": "登录后所有页面（含管理后台）右下角固定展示招募入口；未登录的首页、登录页和注册页不展示。下方编辑的是招募弹窗的首页内容。",
     "fields": {
         "title": "招募标题",
         "subtitle": "副标题",
@@ -76,6 +76,19 @@ export default {
       contactHint: '遇到接入、计费或账号问题，欢迎随时联系我们。',
       contactLinkLabel: '在线客服',
       contactTextLabel: '联系方式（点击可全选）'
+    },
+    trust: {
+      statusNav: '服务状态',
+      totalRequests: '累计处理请求',
+      totalTokens: '累计处理 Token',
+      statusDesc: '近 7 天平均可用率',
+      modelsTitle: '支持的模型与价格',
+      modelsDesc: '按量计费，价格公开透明，用多少付多少',
+      viewAllModels: '查看全部模型',
+      input: '输入',
+      output: '输出',
+      perMillion: '美元 / 百万 Token',
+      updatesTitle: '最近更新'
     },
     tags: {
       subscriptionToApi: '订阅转 API',

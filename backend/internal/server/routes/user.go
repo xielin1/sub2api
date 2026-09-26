@@ -17,6 +17,20 @@ func RegisterUserRoutes(
 	settingService *service.SettingService,
 	panelRateLimiter *middleware.PanelRateLimiter,
 ) {
+	// 公开只读接口：匿名访客可访问，按客户端 IP 限流
+	// 1. 渠道状态（首页与状态页展示可用率）
+	// 2. 最近公告（首页「最近更新」）
+	// 3. 累计服务数据（首页数据条）
+	public := v1.Group("")
+	public.Use(panelRateLimiter.PublicIP())
+	public.Use(middleware.BackendModeUserGuard(settingService))
+	{
+		public.GET("/channel-monitors", h.ChannelMonitor.List)
+		public.GET("/channel-monitors/:id/status", h.ChannelMonitor.GetStatus)
+		public.GET("/public/announcements", h.Announcement.ListPublic)
+		public.GET("/public/stats", h.Admin.Dashboard.GetPublicStats)
+	}
+
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
@@ -137,13 +151,6 @@ func RegisterUserRoutes(
 			subscriptions.GET("/active", h.Subscription.GetActive)
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
-		}
-
-		// 渠道监控（用户只读）
-		monitors := authenticated.Group("/channel-monitors")
-		{
-			monitors.GET("", h.ChannelMonitor.List)
-			monitors.GET("/:id/status", h.ChannelMonitor.GetStatus)
 		}
 
 		// V2 passive views require feature on + mode=v2.
