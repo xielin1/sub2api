@@ -4,8 +4,8 @@
 
 - 提交：`ee89e8545` 首页信任区块、公开状态页与 mdai 品牌（此前未提交、已在线上的 trust 版本内容）；`917d90241` 全站配色由青色改为首页陶土暖色（Tailwind 主色/灰阶/深色背景及硬编码青色）；`d1b577607` 招募入口登录后全局展示并缩小为暖色样式。平台与分组识别色（如 DeepSeek 青色）、支付品牌色有意保留。
 - `frontend/pnpm-lock.yaml` 的工作区改动（误删 overrides，会导致 frozen 安装失败）未提交，仍留在工作区。
-- 发布：本地构建前端并以 `-tags embed` 交叉编译 Linux amd64 程序，打包 Dockerfile（FROM `sub2api:rollback-before-theme`）上传；`server-2` 构建 `sub2api:0.2.8-klno.3-d1b577607`，仅重建 sub2api 容器。备份及原 Compose 在 `/opt/sub2api/backups/release-d1b577607`（`pg_restore --list` 1216 条），保留 `sub2api:rollback-before-theme`。无数据库迁移，回退直接切回旧镜像即可。
-- 验证：容器 healthy、重启 0、启动后 5 分钟无 ERROR/FATAL 日志；公网 `/health`、首页、登录页、`/api/v1/public/stats` 均 200，公开配置版本 `0.2.8-klno.3`，未登录招募接口 401，线上 CSS 含新主色 `#d66b4d`。前端全量测试除既有的 `EditAccountModal.grokMediaEligibility` 3 项外通过。未登录后台逐页检查暖色与招募入口遮挡情况。
+- 发布：本地构建前端并以 `-tags embed` 交叉编译 Linux amd64 程序，打包 Dockerfile（FROM `sub2api:rollback-before-theme`）上传；`server-2` 构建 `sub2api:0.2.8-x1`（版本号改为「版本+x序号」命名，不再使用 klno 后缀），仅重建 sub2api 容器。备份及原 Compose 在 `/opt/sub2api/backups/release-d1b577607`（`pg_restore --list` 1216 条），保留 `sub2api:rollback-before-theme`。无数据库迁移，回退直接切回旧镜像即可。
+- 验证：容器 healthy、重启 0、启动后 5 分钟无 ERROR/FATAL 日志；公网 `/health`、首页、登录页、`/api/v1/public/stats` 均 200，公开配置版本 `0.2.8-x1`，未登录招募接口 401，线上 CSS 含新主色 `#d66b4d`。前端全量测试除既有的 `EditAccountModal.grokMediaEligibility` 3 项外通过。未登录后台逐页检查暖色与招募入口遮挡情况。
 - 部署期间本机经手机热点（中国移动）直连 server-2 的 SSH 握手频繁超时，服务器侧 sshd/防火墙/fail2ban 正常；更换网络后直连恢复。
 
 ## 2026-09-24：mdai 主域名与品牌迁移
