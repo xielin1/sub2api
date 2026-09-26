@@ -165,7 +165,7 @@ onMounted(async () => {
 <template>
   <NavigationProgress />
   <RouterView />
-  <!-- 1. 招募入口使用登录鉴权配置，仅在工作台展示。 -->
+  <!-- 1. 招募入口使用登录鉴权配置，登录后所有页面固定展示。 -->
   <SalesRecruitmentWidget />
   <Toast />
   <AnnouncementPopup />
