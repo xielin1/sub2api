@@ -668,7 +668,8 @@ func (s *OpenAIGatewayService) buildUpstreamRequestOpenAIPassthrough(
 	if c != nil && c.Request != nil {
 		for key, values := range c.Request.Header {
 			lower := strings.ToLower(strings.TrimSpace(key))
-			if !isOpenAIPassthroughAllowedRequestHeader(lower, allowTimeoutHeaders) && !(account.IsCPR() && openaiCPRContextHeaders[lower]) {
+			// 1. 既不在透传白名单，也不是 CPR 账号的会话关联头时跳过。
+			if !isOpenAIPassthroughAllowedRequestHeader(lower, allowTimeoutHeaders) && (!account.IsCPR() || !openaiCPRContextHeaders[lower]) {
 				continue
 			}
 			for _, v := range values {
