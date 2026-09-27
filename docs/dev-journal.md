@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-09-27：账号异常通知改为「开始一次 + 恢复一次」并更新线上2
+
+- 原因：x6 上线后 24 小时发出 84 封，主要是 Grok 账号 #22 因 `grok upstream temporary error` 每次临时停调度 2 分钟、约每 5 分钟进出一次异常，每次重新进入都被当作新异常。
+- 代码：提交 `a9a672dbf`、标签 `v0.2.8-x7`。每个账号每类异常开始时通知一次；异常期间只刷新最近异常时间；连续正常 30 分钟才算恢复并发一封恢复通知；同一轮的异常与恢复合并成一封。`account_error_notify_notified_ids` 改存 `{类型:{账号ID:{name,platform,since,last_seen}}}`，旧格式视为空，上线时当前异常账号会重新通知一次。模板新增 `recovered_count`。本地模拟「每 5 分钟波动、持续 2 小时」结果为 1 封异常 + 1 封恢复。
+- 发布：`sub2api:0.2.8-x7`（基于 `0.2.8-x6`），仅重建 `sub2api` 容器；备份位于 `/opt/sub2api/backups/release-0.2.8-x7`，`pg_restore --list` 1216 项；旧镜像保留为 `sub2api:rollback-before-x7`。容器 healthy、重启 0；上线后未做长时间观察。
+
 ## 2026-09-26：账号异常通知扩展到限流、过载、临时停调度与上游 5xx 并更新线上2
 
 - 代码：提交 `a2bb275d2`、标签 `v0.2.8-x6`。在错误停用之外新增两类：状态正常但暂时不可调度（`rate_limit_reset_at`、`overload_until`、`temp_unschedulable_until` 未到期，覆盖 429、529 以及 OAuth 401/402/OpenAI 403 的临时停调度），以及 5 分钟内同一账号上游 5xx 达到 5 次（读 `ops_error_logs`，含已被重试恢复的请求）。已通知集合改为按类型分组的 JSON，三类分别去重；设置页与模板文案改为「账号异常」。
