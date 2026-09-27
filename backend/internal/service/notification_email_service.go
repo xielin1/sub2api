@@ -924,7 +924,8 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 			"quota_remaining":     "20.00",
 			"quota_threshold":     "20%",
 			"account_count":       "1",
-			"account_list":        "[错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
+			"recovered_count":     "0",
+			"account_list":        "[异常 / Alert][错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
 			"triggered_at":        "2026-05-20 12:00:00",
 			"group_name":          "默认分组",
 			"moderation_category": "violence",
@@ -974,7 +975,8 @@ func notificationEmailSampleVariables(locale string) map[string]string {
 		"quota_remaining":     "20.00",
 		"quota_threshold":     "20%",
 		"account_count":       "1",
-		"account_list":        "[错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
+		"recovered_count":     "0",
+		"account_list":        "[异常 / Alert][错误停用 / Error] #1001 openai-main (openai)\n401 Unauthorized",
 		"triggered_at":        "2026-05-20 12:00:00",
 		"group_name":          "Default group",
 		"moderation_category": "violence",
@@ -1111,11 +1113,11 @@ var notificationEmailEventDefinitions = map[string]NotificationEmailEventInfo{
 	NotificationEmailEventAccountErrorAlert: {
 		Event:       NotificationEmailEventAccountErrorAlert,
 		Label:       "Account error alert",
-		Description: "Sent to configured account error notification emails when upstream accounts enter the error state, become temporarily unavailable, or hit frequent upstream 5xx errors.",
+		Description: "Sent to configured account error notification emails once when upstream accounts enter the error state, become temporarily unavailable, or hit frequent upstream 5xx errors, and once more after they stay normal for 30 minutes.",
 		Category:    "admin",
 		Optional:    false,
 		Placeholders: append(append([]string{}, notificationEmailCommonPlaceholders...),
-			"account_count", "account_list", "triggered_at"),
+			"account_count", "recovered_count", "account_list", "triggered_at"),
 	},
 	NotificationEmailEventContentModerationViolation: {
 		Event:       NotificationEmailEventContentModerationViolation,
@@ -1337,17 +1339,17 @@ var notificationEmailOfficialTemplates = map[string]map[string]notificationEmail
 	},
 	NotificationEmailEventAccountErrorAlert: {
 		notificationEmailDefaultLocale: {
-			Subject: "[{{site_name}}] Account alert - {{account_count}} account(s)",
+			Subject: "[{{site_name}}] Account alert - {{account_count}} alert(s), {{recovered_count}} recovered",
 			HTML: notificationEmailCard("#dc2626", "Account alert", `
-<p>{{account_count}} upstream account(s) need attention: error state, temporarily unavailable (rate limit / overload / temporary unschedulable), or frequent upstream 5xx.</p>
+<p>{{account_count}} upstream account(s) became abnormal (error state, temporarily unavailable, or frequent upstream 5xx); {{recovered_count}} account(s) recovered after staying normal for 30 minutes.</p>
 <p><strong>Detected at</strong>: {{triggered_at}}</p>
 <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#f9fafb;padding:12px;border-radius:6px;">{{account_list}}</div>
 <p>Please check these accounts in the admin console.</p>`),
 		},
 		notificationEmailLocaleChinese: {
-			Subject: "[{{site_name}}] 账号异常告警 - {{account_count}} 个账号",
+			Subject: "[{{site_name}}] 账号异常 {{account_count}} 个 / 恢复 {{recovered_count}} 个",
 			HTML: notificationEmailCard("#dc2626", "账号异常告警", `
-<p>有 {{account_count}} 个上游账号出现异常：错误停用、暂时不可用（限流/过载/临时停调度）或上游 5xx 频繁。</p>
+<p>新出现异常 {{account_count}} 个（错误停用、暂时不可用或上游 5xx 频繁），连续正常 30 分钟后恢复 {{recovered_count}} 个。</p>
 <p><strong>发现时间</strong>：{{triggered_at}}</p>
 <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:#f9fafb;padding:12px;border-radius:6px;">{{account_list}}</div>
 <p>请到管理后台检查这些账号。</p>`),

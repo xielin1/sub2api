@@ -945,10 +945,10 @@ export default {
       },
       accountErrorNotify: {
         title: 'Account Alert Notification',
-        description: 'Email a summary when upstream accounts need attention: error state, temporarily unavailable (429 rate limit, 529 overload, temporary unschedulable), or 5 upstream 5xx errors within 5 minutes; an account is notified again after it recovers and fails again',
+        description: 'Email once when upstream accounts become abnormal: error state, temporarily unavailable (429 rate limit, 529 overload, temporary unschedulable), or 5 upstream 5xx errors within 5 minutes; email once more after they stay normal for 30 minutes',
         enabled: 'Enable Account Alert Notification',
         emails: 'Notification Emails',
-        emailsHint: 'Checked every minute; each ongoing issue of the same kind is notified once. Leave empty to disable',
+        emailsHint: 'Checked every minute; alerts and recoveries found together are merged into one email, and flapping during an incident is not re-sent. Leave empty to disable',
         addEmail: 'Add Email',
         emailPlaceholder: 'Enter email address',
       },

@@ -382,7 +382,7 @@ const eventDisplayMeta: Record<string, EventDisplayMeta> = {
   },
   "account.error_alert": {
     label: "账号异常告警",
-    timing: "上游账号错误停用、暂时不可用（限流/过载/临时停调度）或上游 5xx 频繁时，后台每分钟汇总发送给账号异常通知邮箱。",
+    timing: "上游账号错误停用、暂时不可用（限流/过载/临时停调度）或上游 5xx 频繁时发送一次；连续正常 30 分钟后再发送一次恢复通知。",
     categoryLabel: "管理告警",
   },
   "content_moderation.violation_notice": {
@@ -450,7 +450,7 @@ const eventDisplayMetaEn: Record<string, EventDisplayMeta> = {
   },
   "account.error_alert": {
     label: "Account Alert",
-    timing: "Sent every minute as a summary to account alert emails when upstream accounts enter the error state, become temporarily unavailable (rate limit / overload / temporary unschedulable), or hit frequent upstream 5xx.",
+    timing: "Sent once when upstream accounts enter the error state, become temporarily unavailable (rate limit / overload / temporary unschedulable), or hit frequent upstream 5xx, and once more after they stay normal for 30 minutes.",
     categoryLabel: "Admin",
   },
   "content_moderation.violation_notice": {

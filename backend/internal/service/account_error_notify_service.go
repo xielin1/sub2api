@@ -16,8 +16,10 @@ import (
 const (
 	// accountErrorNotifyInterval 账号异常扫描周期。
 	accountErrorNotifyInterval = time.Minute
-	// accountErrorNotifyNotifiedKey 保存各类异常中已通知且仍未恢复的账号 ID，重启后不重复通知。
+	// accountErrorNotifyNotifiedKey 保存各类异常中已通知、尚未发恢复通知的账号，重启后不重复通知。
 	accountErrorNotifyNotifiedKey = "account_error_notify_notified_ids"
+	// accountErrorNotifyRecoverQuiet 账号连续正常达到该时长才算恢复，避免反复进出异常时频繁发信。
+	accountErrorNotifyRecoverQuiet = 30 * time.Minute
 	// accountErrorNotifyMaxMessageLen 邮件中单个账号异常信息的最大长度。
 	accountErrorNotifyMaxMessageLen = 300
 	// accountErrorNotify5xxWindow 统计上游 5xx 的时间窗口。
@@ -51,8 +53,17 @@ type accountErrorNotifyItem struct {
 	Detail   string
 }
 
+// accountErrorNotifyState 已通知的异常账号：记录名称用于恢复邮件，记录首次和最近一次异常时间用于判断恢复。
+type accountErrorNotifyState struct {
+	Name     string    `json:"name"`
+	Platform string    `json:"platform"`
+	Since    time.Time `json:"since"`
+	LastSeen time.Time `json:"last_seen"`
+}
+
 // AccountErrorNotifyService 定时扫描异常的上游账号，并邮件通知配置的邮箱。
 // 覆盖三类异常：错误停用（status=error）、暂时不可用（限流/过载/临时停调度）、上游 5xx 频繁。
+// 每个账号每类异常只在开始时通知一次，连续正常 30 分钟后再发一次恢复通知。
 type AccountErrorNotifyService struct {
 	accountRepo              AccountRepository
 	opsRepo                  OpsRepository
@@ -145,35 +156,51 @@ func (s *AccountErrorNotifyService) runOnce() {
 		accountErrorNotifyKindUpstream5xx: upstreamItems,
 	}
 
-	// 3. 与已通知集合比较，每类只挑出新进入该异常的账号。
-	notified := s.loadNotified(ctx)
-	newItems := make([]accountErrorNotifyItem, 0)
-	nextNotified := make(map[string][]int64, len(current))
+	// 3. 与已通知状态比较：新出现的异常进入告警列表；已通知的刷新最近异常时间；
+	//    不再异常且连续正常达到静默期的进入恢复列表，未达到的继续保留。
+	states := s.loadStates(ctx)
+	alerts := make([]accountErrorNotifyItem, 0)
+	recoveries := make([]accountErrorNotifyItem, 0)
 	for _, kind := range []string{accountErrorNotifyKindError, accountErrorNotifyKindUnavailable, accountErrorNotifyKindUpstream5xx} {
-		seen := map[int64]bool{}
-		for _, id := range notified[kind] {
-			seen[id] = true
+		if states[kind] == nil {
+			states[kind] = map[int64]*accountErrorNotifyState{}
 		}
-		ids := make([]int64, 0, len(current[kind]))
+		abnormal := map[int64]bool{}
 		for _, item := range current[kind] {
-			ids = append(ids, item.ID)
-			if !seen[item.ID] {
-				newItems = append(newItems, item)
+			abnormal[item.ID] = true
+			if state := states[kind][item.ID]; state != nil {
+				state.LastSeen = now
+				continue
 			}
+			alerts = append(alerts, item)
+			states[kind][item.ID] = &accountErrorNotifyState{Name: item.Name, Platform: item.Platform, Since: now, LastSeen: now}
 		}
-		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-		nextNotified[kind] = ids
+		for id, state := range states[kind] {
+			if abnormal[id] || now.Sub(state.LastSeen) < accountErrorNotifyRecoverQuiet {
+				continue
+			}
+			recoveries = append(recoveries, accountErrorNotifyItem{
+				Kind:     kind,
+				ID:       id,
+				Name:     state.Name,
+				Platform: state.Platform,
+				Detail: fmt.Sprintf("异常时段 / Abnormal: %s ~ %s",
+					formatAccountErrorNotifyTime(state.Since), formatAccountErrorNotifyTime(state.LastSeen)),
+			})
+			delete(states[kind], id)
+		}
 	}
+	sort.Slice(recoveries, func(i, j int) bool { return recoveries[i].ID < recoveries[j].ID })
 
-	// 4. 有新异常时发送一封汇总邮件；全部发送失败则不更新已通知集合，下一轮重试。
-	if len(newItems) > 0 && !s.sendAlert(ctx, recipients, newItems, now) {
+	// 4. 有新异常或恢复时发送一封汇总邮件；全部发送失败则不保存状态，下一轮重试。
+	if (len(alerts) > 0 || len(recoveries) > 0) && !s.sendAlert(ctx, recipients, alerts, recoveries, now) {
 		return
 	}
 
-	// 5. 用当前异常账号覆盖已通知集合：已恢复的账号被移除，再次异常会重新通知。
-	payload, _ := json.Marshal(nextNotified)
+	// 5. 保存最新状态。
+	payload, _ := json.Marshal(states)
 	if err := s.settingRepo.Set(ctx, accountErrorNotifyNotifiedKey, string(payload)); err != nil {
-		slog.Error("account error notify: save notified ids failed", "error", err)
+		slog.Error("account error notify: save notified states failed", "error", err)
 	}
 }
 
@@ -299,15 +326,15 @@ func (s *AccountErrorNotifyService) collectUpstream5xxAccounts(ctx context.Conte
 	return items, nil
 }
 
-// loadNotified 读取各类异常已通知的账号 ID。旧格式或解析失败时视为空。
-func (s *AccountErrorNotifyService) loadNotified(ctx context.Context) map[string][]int64 {
-	result := map[string][]int64{}
+// loadStates 读取各类异常的已通知状态。旧格式或解析失败时视为空，当前异常账号会重新通知一次。
+func (s *AccountErrorNotifyService) loadStates(ctx context.Context) map[string]map[int64]*accountErrorNotifyState {
+	result := map[string]map[int64]*accountErrorNotifyState{}
 	raw, err := s.settingRepo.GetValue(ctx, accountErrorNotifyNotifiedKey)
 	if err != nil || strings.TrimSpace(raw) == "" {
 		return result
 	}
 	if err := json.Unmarshal([]byte(raw), &result); err != nil {
-		return map[string][]int64{}
+		return map[string]map[int64]*accountErrorNotifyState{}
 	}
 	return result
 }
@@ -317,20 +344,24 @@ func formatAccountErrorNotifyTime(t time.Time) string {
 	return t.Local().Format("2006-01-02 15:04:05 MST")
 }
 
-// sendAlert 给每个收件人发送异常汇总邮件，至少一封成功返回 true。
-func (s *AccountErrorNotifyService) sendAlert(ctx context.Context, recipients []string, items []accountErrorNotifyItem, now time.Time) bool {
-	// 1. 组装账号列表文本，每个账号一段：类型、ID、名称、平台和异常说明。
-	lines := make([]string, 0, len(items))
-	for _, item := range items {
+// sendAlert 给每个收件人发送异常与恢复汇总邮件，至少一封成功返回 true。
+func (s *AccountErrorNotifyService) sendAlert(ctx context.Context, recipients []string, alerts, recoveries []accountErrorNotifyItem, now time.Time) bool {
+	// 1. 组装账号列表文本：先列新异常，再列已恢复，每个账号一段。
+	lines := make([]string, 0, len(alerts)+len(recoveries))
+	for _, item := range alerts {
 		detail := strings.TrimSpace(item.Detail)
 		if len([]rune(detail)) > accountErrorNotifyMaxMessageLen {
 			detail = string([]rune(detail)[:accountErrorNotifyMaxMessageLen]) + "..."
 		}
-		lines = append(lines, fmt.Sprintf("[%s] #%d %s (%s)\n%s", accountErrorNotifyKindLabels[item.Kind], item.ID, item.Name, item.Platform, detail))
+		lines = append(lines, fmt.Sprintf("[异常 / Alert][%s] #%d %s (%s)\n%s", accountErrorNotifyKindLabels[item.Kind], item.ID, item.Name, item.Platform, detail))
+	}
+	for _, item := range recoveries {
+		lines = append(lines, fmt.Sprintf("[恢复 / Recovered][%s] #%d %s (%s)\n%s", accountErrorNotifyKindLabels[item.Kind], item.ID, item.Name, item.Platform, item.Detail))
 	}
 	accountList := strings.Join(lines, "\n\n")
 	triggeredAt := formatAccountErrorNotifyTime(now)
-	count := strconv.Itoa(len(items))
+	count := strconv.Itoa(len(alerts))
+	recoveredCount := strconv.Itoa(len(recoveries))
 
 	anySent := false
 	for _, to := range recipients {
@@ -341,9 +372,10 @@ func (s *AccountErrorNotifyService) sendAlert(ctx context.Context, recipients []
 			RecipientEmail: to,
 			RecipientName:  emailRecipientName(to),
 			Variables: map[string]string{
-				"account_count": count,
-				"account_list":  accountList,
-				"triggered_at":  triggeredAt,
+				"account_count":   count,
+				"recovered_count": recoveredCount,
+				"account_list":    accountList,
+				"triggered_at":    triggeredAt,
 			},
 		})
 		cancel()
@@ -357,9 +389,9 @@ func (s *AccountErrorNotifyService) sendAlert(ctx context.Context, recipients []
 		}
 
 		// 3. 模板或配置不可用时回退到内置正文。
-		subject := fmt.Sprintf("账号异常告警 / Account Alert - %s", count)
-		body := fmt.Sprintf(`<p>%s 个上游账号出现异常 / %s upstream account(s) need attention.</p><p>%s</p><pre style="white-space:pre-wrap;">%s</pre>`,
-			count, count, triggeredAt, html.EscapeString(accountList))
+		subject := fmt.Sprintf("账号异常 %s / 恢复 %s - Account Alert", count, recoveredCount)
+		body := fmt.Sprintf(`<p>异常 %s 个，恢复 %s 个 / %s alert(s), %s recovered.</p><p>%s</p><pre style="white-space:pre-wrap;">%s</pre>`,
+			count, recoveredCount, count, recoveredCount, triggeredAt, html.EscapeString(accountList))
 		sendCtx, cancel = context.WithTimeout(ctx, emailSendTimeout)
 		err = s.emailService.SendEmail(sendCtx, to, subject, body)
 		cancel()
@@ -370,7 +402,7 @@ func (s *AccountErrorNotifyService) sendAlert(ctx context.Context, recipients []
 		anySent = true
 	}
 	if anySent {
-		slog.Info("account error notify: alert sent", "accounts", len(items), "recipients", len(recipients))
+		slog.Info("account error notify: alert sent", "alerts", len(alerts), "recoveries", len(recoveries), "recipients", len(recipients))
 	}
 	return anySent
 }
