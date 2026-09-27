@@ -1,6 +1,6 @@
-name: Sync official upstream into mine
+name: Sync official upstream into main
 
-# 1. 直接合并官方 main，保留 mine 的补丁历史；冲突或验证失败时不推送。
+# 1. 直接合并官方 main，保留 main 的补丁历史；冲突或验证失败时不推送。
 on:
   schedule:
     - cron: '17 3 * * *'
@@ -10,17 +10,17 @@ permissions:
   contents: write
 
 concurrency:
-  group: sync-upstream-mine
+  group: sync-upstream-main
   cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout mine
+      - name: Checkout main
         uses: actions/checkout@v6
         with:
-          ref: mine
+          ref: main
           fetch-depth: 0
 
       - name: Merge official upstream
@@ -75,6 +75,6 @@ jobs:
           pnpm --dir frontend run build
           make test-frontend-critical
 
-      - name: Push merged mine
+      - name: Push merged main
         if: steps.merge.outputs.changed == 'true'
-        run: git push origin HEAD:mine
+        run: git push origin HEAD:main
