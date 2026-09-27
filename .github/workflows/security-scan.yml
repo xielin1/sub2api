@@ -2,9 +2,8 @@ name: Security Scan
 
 on:
   push:
-    # 同 backend-ci.yml：main 是 cron 宿主（每天被重建成上游代码），tag push
-    # 与推分支那次扫的是同一棵树。周一的 schedule 不受这里影响，照常跑。
-    branches-ignore:
+    # 1. 同 backend-ci.yml：只扫 main；标签与推 main 是同一棵树，不重复扫描。周一的 schedule 照常跑。
+    branches:
       - main
     paths-ignore:
       - '**.md'

@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    # 1. mine 是开发分支，main 保留原有用途；标签发布由 release.yml 处理。
-    branches-ignore:
+    # 1. 所有提交统一在 main；标签发布由 release.yml 处理，发布回写的 VERSION 提交带 [skip ci] 不触发。
+    branches:
       - main
     paths-ignore:
       - '**.md'
