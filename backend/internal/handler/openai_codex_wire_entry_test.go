@@ -498,8 +498,7 @@ func TestCodexWireEntryCompactCacheKeyPathsAgree(t *testing.T) {
 			codexWireAccount(806, "target", extra),
 		})
 		defer cleanup()
-		// 非 legacy 的 openai-beta 只有透传构造器会原样转发，用它证明确实走了那条分支，
-		// 而不是悄悄回落到非透传后两边"当然一致"。
+		// 非 legacy 的 openai-beta 两条分支都会原样转发，这里用它确认该头未被误剥离。
 		req := httptest.NewRequest(http.MethodPost, "/v1/responses/compact",
 			strings.NewReader(codexWireCompactBody()))
 		req.Header.Set("content-type", "application/json")
@@ -517,9 +516,10 @@ func TestCodexWireEntryCompactCacheKeyPathsAgree(t *testing.T) {
 	}
 
 	forward, passthrough := derive(false), derive(true)
-	require.Empty(t, forward.header.Get("openai-beta"), "非透传不转发该头")
+	// 1. 上游 #7617 起非透传也保留调用方的非 legacy openai-beta，两条分支都应原样转发
+	require.Equal(t, codexWirePassthroughMarker, forward.header.Get("openai-beta"), "非透传也保留非 legacy beta")
 	require.Equal(t, codexWirePassthroughMarker, passthrough.header.Get("openai-beta"),
-		"标记头缺失说明没走透传分支，后面的一致性断言就没有意义了")
+		"透传分支同样保留非 legacy beta")
 
 	forwardKey := gjson.GetBytes(forward.body, "prompt_cache_key").String()
 	passthroughKey := gjson.GetBytes(passthrough.body, "prompt_cache_key").String()
