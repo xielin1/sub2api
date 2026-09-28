@@ -556,6 +556,7 @@ export default {
   // Channel Status (user-facing read-only view)
   channelStatus: {
     title: 'Channel Status',
+    rate: 'Rate',
     description: 'Inspect channel availability, latency and recent status',
     searchPlaceholder: 'Search channels...',
     allProviders: 'All Providers',

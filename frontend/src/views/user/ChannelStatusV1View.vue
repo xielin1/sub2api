@@ -122,17 +122,21 @@ const overallStatus = computed<OverallStatus>(() => {
 
 // 平台 tab 列表：监控的 provider 即其探测的平台（openai / anthropic / grok ...）
 const platformTabs = computed(() => {
-  // 1. 按平台首次出现的顺序统计每个平台的监控数
+  // 1. 统计每个平台的监控数
   const counts = new Map<string, number>()
   for (const it of items.value) {
     counts.set(it.provider, (counts.get(it.provider) ?? 0) + 1)
   }
   // 2. 生成 tab，anthropic 平台对用户展示为 Claude
-  return Array.from(counts, ([platform, count]) => ({
+  const tabs = Array.from(counts, ([platform, count]) => ({
     value: platform,
     label: platform === 'anthropic' ? 'Claude' : platformLabel(platform),
     count,
   }))
+  // 3. 固定顺序 OpenAI、Claude、Grok，其余平台排在后面
+  const order = ['openai', 'anthropic', 'grok']
+  const rank = (p: string) => (order.indexOf(p) === -1 ? order.length : order.indexOf(p))
+  return tabs.sort((a, b) => rank(a.value) - rank(b.value))
 })
 
 // 当前生效的平台：用户选中的平台已不存在时回落到第一个平台
@@ -146,8 +150,10 @@ const activePlatform = computed({
   },
 })
 
-// 当前平台下展示的监控卡片
-const filteredItems = computed(() => items.value.filter(it => it.provider === activePlatform.value))
+// 当前平台下展示的监控卡片，按倍率从低到高排序，未配置倍率的排在最后
+const filteredItems = computed(() => items.value
+  .filter(it => it.provider === activePlatform.value)
+  .sort((a, b) => (a.rate_multiplier ?? Infinity) - (b.rate_multiplier ?? Infinity)))
 
 const detailTitle = computed(() => {
   return detailTarget.value?.name || t('channelStatus.detailTitle')

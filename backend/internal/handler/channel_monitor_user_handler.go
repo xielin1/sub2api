@@ -16,6 +16,8 @@ import (
 type ChannelMonitorUserHandler struct {
 	monitorService *service.ChannelMonitorService
 	settingService *service.SettingService
+	// groupRepo 用于按监控绑定的分组名查出分组默认倍率，供状态页展示
+	groupRepo service.GroupRepository
 }
 
 // NewChannelMonitorUserHandler 创建 handler。
@@ -23,10 +25,12 @@ type ChannelMonitorUserHandler struct {
 func NewChannelMonitorUserHandler(
 	monitorService *service.ChannelMonitorService,
 	settingService *service.SettingService,
+	groupRepo service.GroupRepository,
 ) *ChannelMonitorUserHandler {
 	return &ChannelMonitorUserHandler{
 		monitorService: monitorService,
 		settingService: settingService,
+		groupRepo:      groupRepo,
 	}
 }
 
@@ -52,17 +56,19 @@ func (h *ChannelMonitorUserHandler) quotaVisible(c *gin.Context) bool {
 // --- Response ---
 
 type channelMonitorUserListItem struct {
-	ID                   int64                                `json:"id"`
-	Name                 string                               `json:"name"`
-	Provider             string                               `json:"provider"`
-	GroupName            string                               `json:"group_name"`
-	PrimaryModel         string                               `json:"primary_model"`
-	PrimaryStatus        string                               `json:"primary_status"`
-	PrimaryLatencyMs     *int                                 `json:"primary_latency_ms"`
-	PrimaryPingLatencyMs *int                                 `json:"primary_ping_latency_ms"`
-	Availability7d       float64                              `json:"availability_7d"`
-	ExtraModels          []dto.ChannelMonitorExtraModelStatus `json:"extra_models"`
-	Timeline             []channelMonitorUserTimelinePoint    `json:"timeline"`
+	ID                   int64   `json:"id"`
+	Name                 string  `json:"name"`
+	Provider             string  `json:"provider"`
+	GroupName            string  `json:"group_name"`
+	PrimaryModel         string  `json:"primary_model"`
+	PrimaryStatus        string  `json:"primary_status"`
+	PrimaryLatencyMs     *int    `json:"primary_latency_ms"`
+	PrimaryPingLatencyMs *int    `json:"primary_ping_latency_ms"`
+	Availability7d       float64 `json:"availability_7d"`
+	// RateMultiplier 监控绑定分组的默认倍率；分组名未匹配到活跃分组时为 null
+	RateMultiplier *float64                             `json:"rate_multiplier"`
+	ExtraModels    []dto.ChannelMonitorExtraModelStatus `json:"extra_models"`
+	Timeline       []channelMonitorUserTimelinePoint    `json:"timeline"`
 	// LatestQuota 主模型最近配额快照；channel_monitor_show_quota=false 时
 	// 由 userMonitorViewToItem 的调用方传入 false 剥离（服务端脱敏，非仅前端隐藏）。
 	LatestQuota *domain.MonitorQuotaSnapshot `json:"latest_quota,omitempty"`
@@ -167,10 +173,25 @@ func (h *ChannelMonitorUserHandler) List(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
+	// 1. 查出活跃分组，按分组名建立倍率索引
+	groups, err := h.groupRepo.ListActive(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	rateByGroupName := make(map[string]float64, len(groups))
+	for _, g := range groups {
+		rateByGroupName[g.Name] = g.RateMultiplier
+	}
+	// 2. 组装列表项，并按监控绑定的分组名补上倍率
 	includeQuota := h.quotaVisible(c)
 	items := make([]channelMonitorUserListItem, 0, len(views))
 	for _, v := range views {
-		items = append(items, userMonitorViewToItem(v, includeQuota))
+		item := userMonitorViewToItem(v, includeQuota)
+		if rate, ok := rateByGroupName[v.GroupName]; ok {
+			item.RateMultiplier = &rate
+		}
+		items = append(items, item)
 	}
 	response.Success(c, gin.H{"items": items})
 }

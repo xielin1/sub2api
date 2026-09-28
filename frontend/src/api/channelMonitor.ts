@@ -31,6 +31,8 @@ export interface UserMonitorView {
   primary_latency_ms: number | null
   primary_ping_latency_ms: number | null
   availability_7d: number
+  /** 监控绑定分组的默认倍率；分组未匹配到时为 null */
+  rate_multiplier: number | null
   extra_models: UserMonitorExtraModel[]
   timeline: MonitorTimelinePoint[]
   /**

@@ -17,6 +17,13 @@
           {{ item.name }}
         </div>
         <div class="mt-0.5 flex items-center gap-1.5 min-w-0">
+          <!-- 分组倍率：用户实际按此倍率计费 -->
+          <span
+            v-if="item.rate_multiplier != null"
+            class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold font-mono flex-shrink-0 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30"
+          >
+            {{ t('channelStatus.rate') }} {{ item.rate_multiplier }}x
+          </span>
           <span
             class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium flex-shrink-0"
             :class="providerBadgeClass(item.provider)"
