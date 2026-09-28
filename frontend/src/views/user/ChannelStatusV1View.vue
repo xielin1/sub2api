@@ -13,8 +13,33 @@
       @refresh="manualReload"
     />
 
+    <!-- 1. 上方平台分类 tab，点击后下方只展示该平台的监控卡片 -->
+    <nav
+      v-if="platformTabs.length > 0"
+      class="mb-5 flex gap-2 overflow-x-auto"
+      role="tablist"
+    >
+      <button
+        v-for="tab in platformTabs"
+        :key="tab.value"
+        type="button"
+        role="tab"
+        class="flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+        :class="activePlatform === tab.value
+          ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-700 dark:text-white dark:ring-dark-600'
+          : 'text-gray-600 hover:bg-white/60 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white'"
+        :aria-selected="activePlatform === tab.value"
+        @click="activePlatform = tab.value"
+      >
+        <ProviderIcon :provider="tab.value" :size="18" />
+        <span>{{ tab.label }}</span>
+        <span class="text-xs tabular-nums text-gray-400">{{ tab.count }}</span>
+      </button>
+    </nav>
+
+    <!-- 2. 当前平台的监控卡片 -->
     <MonitorCardGrid
-      :items="items"
+      :items="filteredItems"
       :window="currentWindow"
       :countdown-seconds="countdown"
       :loading="loading"
@@ -52,6 +77,8 @@ import MonitorHero, {
 } from '@/components/user/monitor/MonitorHero.vue'
 import MonitorCardGrid from '@/components/user/monitor/MonitorCardGrid.vue'
 import MonitorDetailDialog from '@/components/user/MonitorDetailDialog.vue'
+import ProviderIcon from '@/components/user/monitor/ProviderIcon.vue'
+import { platformLabel } from '@/utils/platformColors'
 import { DEFAULT_INTERVAL_SECONDS, STATUS_OPERATIONAL } from '@/constants/channelMonitor'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
@@ -68,6 +95,8 @@ const currentWindow = ref<MonitorWindow>('7d')
 const detailCache = reactive<Record<number, UserMonitorDetail>>({})
 const showDetail = ref(false)
 const detailTarget = ref<UserMonitorView | null>(null)
+// 当前选中的平台 tab；为空时默认取第一个平台
+const selectedPlatform = ref('')
 
 let abortController: AbortController | null = null
 
@@ -90,6 +119,35 @@ const overallStatus = computed<OverallStatus>(() => {
   }
   return 'operational'
 })
+
+// 平台 tab 列表：监控的 provider 即其探测的平台（openai / anthropic / grok ...）
+const platformTabs = computed(() => {
+  // 1. 按平台首次出现的顺序统计每个平台的监控数
+  const counts = new Map<string, number>()
+  for (const it of items.value) {
+    counts.set(it.provider, (counts.get(it.provider) ?? 0) + 1)
+  }
+  // 2. 生成 tab，anthropic 平台对用户展示为 Claude
+  return Array.from(counts, ([platform, count]) => ({
+    value: platform,
+    label: platform === 'anthropic' ? 'Claude' : platformLabel(platform),
+    count,
+  }))
+})
+
+// 当前生效的平台：用户选中的平台已不存在时回落到第一个平台
+const activePlatform = computed({
+  get: () => {
+    if (platformTabs.value.some(tab => tab.value === selectedPlatform.value)) return selectedPlatform.value
+    return platformTabs.value[0]?.value ?? ''
+  },
+  set: (value: string) => {
+    selectedPlatform.value = value
+  },
+})
+
+// 当前平台下展示的监控卡片
+const filteredItems = computed(() => items.value.filter(it => it.provider === activePlatform.value))
 
 const detailTitle = computed(() => {
   return detailTarget.value?.name || t('channelStatus.detailTitle')
