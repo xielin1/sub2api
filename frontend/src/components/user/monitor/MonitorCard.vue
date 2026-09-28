@@ -30,16 +30,17 @@
           >
             {{ providerLabel(item.provider) }}
           </span>
-          <!-- 纯配额模式主模型是占位符 "quota"，展示层替换为本地化「配额」标签 -->
-          <span class="font-mono text-xs truncate text-gray-500 dark:text-gray-400">
-            {{ formatMonitorModel(item.primary_model) }}
-          </span>
           <span
             v-if="item.group_name"
-            class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300 flex-shrink-0"
+            class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-dark-700 dark:text-gray-300 truncate min-w-0"
           >
             {{ item.group_name }}
           </span>
+        </div>
+        <!-- 1. 模型名单独一行，避免被倍率、平台、分组徽标挤压截断 -->
+        <!-- 2. 纯配额模式主模型是占位符 "quota"，展示层替换为本地化「配额」标签 -->
+        <div class="mt-1 font-mono text-xs truncate text-gray-500 dark:text-gray-400">
+          {{ formatMonitorModel(item.primary_model) }}
         </div>
       </div>
       <span
