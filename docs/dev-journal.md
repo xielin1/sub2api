@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-09-29：公开分组生图能力与上游对齐（线上2配置）
+
+- 实测：发 `/v1/images/generations` 到各公开分组，并直连对应上游账号。仅 Grok Heavy 满血（57）能生图（`grok-imagine-image` 6.3 秒出图），视频 `grok-imagine-video` 也可生成。GPT 各分组的上游（ideagates、tcboys）返回「分组未开启生图」或「无兼容账号」；Grok Free 上游返回「No eligible Grok media accounts」。
+- 调整（经管理接口，未改代码）：分组 50–56 关闭 `allow_image_generation` 与批量生图，并从模型白名单删除 `gpt-image*`、`*imagine*`、`*video*`；对应渠道 9–14、16 的 `model_mapping` 删除同类模型，模型广场不再展示。分组 57 与渠道 15 保持不变。原值备份在 `server-2:/opt/sub2api/backups/image-align-20260929/groups.csv`、`channels.csv`。
+- 验证：分组 50–57 文字对话均 200；50–56 生图请求被拒；模型广场仅 Grok Heavy 满血展示生图/视频模型。上游开通后需重新加回模型并打开开关，同时设置生图价格（现为空）。
+
 ## 2026-09-29：渠道监控改为流式探测并清空旧监控数据，更新线上2
 
 - 原因：探测使用 `stream:false`，延迟按整段生成完成计时，且非流式等待响应头超过 30 秒即判失败，导致状态页延迟和可用率都比上游状态页差。
