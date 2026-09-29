@@ -54,12 +54,12 @@
     <!-- Metrics -->
     <MonitorMetricPair
       primary-icon="bolt"
-      :primary-label="t('monitorCommon.dialogLatency')"
-      :primary-value="formatLatency(item.primary_latency_ms)"
-      primary-unit="ms"
-      secondary-icon="globe"
-      :secondary-label="t('monitorCommon.endpointPing')"
-      :secondary-value="formatLatency(item.primary_ping_latency_ms)"
+      :primary-label="t('monitorCommon.availabilityPrefix')"
+      :primary-value="availabilityValue == null ? t('monitorCommon.latencyEmpty') : availabilityValue.toFixed(2)"
+      primary-unit="%"
+      secondary-icon="bolt"
+      :secondary-label="t('monitorCommon.dialogLatency')"
+      :secondary-value="formatLatency(item.primary_latency_ms)"
       secondary-unit="ms"
     />
 
@@ -68,13 +68,6 @@
 
     <!-- Divider -->
     <div class="mt-4 border-t border-gray-100 dark:border-dark-700/60"></div>
-
-    <!-- Availability row -->
-    <MonitorAvailabilityRow
-      :window-label="availabilityLabel"
-      :value="availabilityValue"
-      :samples-label="extraModelsCountLabel"
-    />
 
     <!-- Timeline -->
     <MonitorTimeline
@@ -95,7 +88,6 @@ import {
 import { isChannelMonitorQuotaVisible } from '@/utils/featureFlags'
 import ProviderIcon from './ProviderIcon.vue'
 import MonitorMetricPair from './MonitorMetricPair.vue'
-import MonitorAvailabilityRow from './MonitorAvailabilityRow.vue'
 import MonitorTimeline from './MonitorTimeline.vue'
 import MonitorQuotaView from '@/components/common/MonitorQuotaView.vue'
 
@@ -141,14 +133,4 @@ const quotaVisible = computed(
   () => isChannelMonitorQuotaVisible() && !!props.item.latest_quota
 )
 
-const availabilityLabel = computed(() => {
-  const win = t(`channelStatus.windowTab.${props.window}`)
-  return `${t('monitorCommon.availabilityPrefix')} · ${win}`
-})
-
-const extraModelsCountLabel = computed(() => {
-  const count = props.item.extra_models?.length ?? 0
-  if (count === 0) return undefined
-  return t('monitorCommon.extraModelsCount', { n: count })
-})
 </script>
