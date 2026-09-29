@@ -161,8 +161,9 @@ func (e *EasyPay) createRedirectPayment(req payment.CreatePaymentRequest) (*paym
 	return &payment.CreatePaymentResponse{PayURL: payURL}, nil
 }
 
-// createAPIPayment calls mapi.php to get payurl/qrcode (existing behavior).
+// createAPIPayment 调用 mapi.php 获取支付链接或二维码。
 func (e *EasyPay) createAPIPayment(ctx context.Context, req payment.CreatePaymentRequest) (*payment.CreatePaymentResponse, error) {
+	// 1. 按易支付协议组装并签名下单参数。
 	notifyURL, returnURL := e.resolveURLs(req)
 	paymentType := e.upstreamPaymentType(req.PaymentType)
 	params := map[string]string{
@@ -184,8 +185,9 @@ func (e *EasyPay) createAPIPayment(ctx context.Context, req payment.CreatePaymen
 	if err != nil {
 		return nil, fmt.Errorf("easypay create: %w", err)
 	}
+	// 2. code 成功时为数字 1，失败时部分服务商返回字符串 "error"。
 	var resp struct {
-		Code    int    `json:"code"`
+		Code    any    `json:"code"`
 		Msg     string `json:"msg"`
 		TradeNo string `json:"trade_no"`
 		PayURL  string `json:"payurl"`
@@ -195,9 +197,10 @@ func (e *EasyPay) createAPIPayment(ctx context.Context, req payment.CreatePaymen
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("easypay parse: %w", err)
 	}
-	if resp.Code != easypayCodeSuccess {
+	if !easyPayResponseCodeIsSuccess(resp.Code) {
 		return nil, fmt.Errorf("easypay error: %s", resp.Msg)
 	}
+	// 3. 移动端优先使用上游返回的移动支付链接。
 	payURL := resp.PayURL
 	if req.IsMobile && resp.PayURL2 != "" {
 		payURL = resp.PayURL2
@@ -301,14 +304,33 @@ func (e *EasyPay) upstreamPaymentType(paymentType string) string {
 }
 
 func (e *EasyPay) QueryOrder(ctx context.Context, tradeNo string) (*payment.QueryOrderResponse, error) {
+	// 1. Z-Pay 查询接口只接受 GET，请求参数放在查询字符串中。
 	params := map[string]string{
 		"act": "order", "pid": e.config["pid"],
 		"key": e.config["pkey"], "out_trade_no": tradeNo,
 	}
-	body, err := e.post(ctx, e.apiBase()+"/api.php", params)
+	query := url.Values{}
+	for key, value := range params {
+		query.Set(key, value)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.apiBase()+"/api.php?"+query.Encode(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("easypay query: %w", err)
 	}
+	client := e.httpClient
+	if client == nil {
+		client = &http.Client{Timeout: easypayHTTPTimeout}
+	}
+	respHTTP, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("easypay query: %w", err)
+	}
+	defer func() { _ = respHTTP.Body.Close() }()
+	body, err := io.ReadAll(io.LimitReader(respHTTP.Body, maxEasypayResponseSize))
+	if err != nil {
+		return nil, fmt.Errorf("easypay query: %w", err)
+	}
+	// 2. 同时兼容标准顶层字段和已有易支付变体的 data 包装字段。
 	type easyPayQueryData struct {
 		TradeStatus *string `json:"trade_status"`
 		Status      *int    `json:"status"`
