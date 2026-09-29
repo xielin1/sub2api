@@ -1,5 +1,13 @@
 # 开发记录
 
+## 2026-09-29：渠道监控改为流式探测并清空旧监控数据，更新线上2
+
+- 原因：探测使用 `stream:false`，延迟按整段生成完成计时，且非流式等待响应头超过 30 秒即判失败，导致状态页延迟和可用率都比上游状态页差。
+- 代码：提交 `f07ad8953`。所有 provider 探测改为流式（Gemini 走 `streamGenerateContent?alt=sse`），延迟改为首个正文增量到达时间，thinking/reasoning 增量不计入；上游仍回整包 JSON 或出错时按原逻辑解析并记整次耗时。版本 `0.2.9-x7`（`cc2ecd2c5`）。
+- 发布：本地构建前端并以 `-tags embed` 交叉编译 Linux amd64 程序，基于 `sub2api:0.2.9-x6` 替换程序生成 `sub2api:0.2.9-x7`，仅重建 `sub2api` 容器。备份及原 Compose 位于 `/opt/sub2api/backups/release-0.2.9-x7-stream-probe`，`pg_restore --list` 1216 项；旧镜像保留为 `sub2api:rollback-before-0.2.9-x7`。无数据库迁移。
+- 数据：删除 `channel_monitor_histories` 中切换前的 466 行旧口径记录（日聚合表本为空），监控配置未改动；可用率与延迟从 x7 首轮探测重新累计。
+- 验证：线上容器 healthy、重启 0、无 ERROR/FATAL，公网首页、状态接口 200，公开配置版本 `0.2.9-x7`。首轮 8 个监控全部返回，GPT 首字延迟约 2.0–3.4 秒，Grok Heavy 2.1 秒，Grok Free 6.5 秒记为 degraded。
+
 ## 2026-09-29：修复线上2迁移启动故障
 
 - 根因：构建产物含 macOS AppleDouble 文件 `._001_init.sql`，被迁移通配符匹配并当作 SQL 执行，PostgreSQL 返回 `pq: invalid message format`。
