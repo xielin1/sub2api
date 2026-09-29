@@ -297,7 +297,9 @@ func TestApplyMigrationsFS_SkipEmptyAndAlreadyApplied(t *testing.T) {
 		WithArgs(migrationsAdvisoryLockID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
+	// 1. AppleDouble 文件应被忽略；2. 空迁移和已应用迁移仍按原逻辑跳过。
 	fsys := fstest.MapFS{
+		"._001_init.sql": &fstest.MapFile{Data: []byte("not SQL")},
 		"000_empty.sql":   &fstest.MapFile{Data: []byte("   \n\t ")},
 		"001_already.sql": &fstest.MapFile{Data: []byte(alreadySQL)},
 	}

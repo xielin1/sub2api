@@ -180,6 +180,11 @@ func applyMigrationsFS(ctx context.Context, db *sql.DB, fsys fs.FS) error {
 	sort.Strings(files) // 确保按文件名顺序执行迁移
 
 	for _, name := range files {
+		// 1. 忽略 macOS 生成的 AppleDouble 文件，避免把元数据当作 SQL 执行。
+		if strings.HasPrefix(name, "._") {
+			continue
+		}
+
 		// 读取迁移文件内容
 		contentBytes, err := fs.ReadFile(fsys, name)
 		if err != nil {

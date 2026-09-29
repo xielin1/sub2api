@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-09-29：修复线上2迁移启动故障
+
+- 根因：构建产物含 macOS AppleDouble 文件 `._001_init.sql`，被迁移通配符匹配并当作 SQL 执行，PostgreSQL 返回 `pq: invalid message format`。
+- 修复：迁移执行器跳过 `._` 前缀文件；构建并部署 `sub2api:0.2.9-x5`。部署前备份位于 `/opt/sub2api/backups/release-0.2.9-x5-appledouble/postgres.dump`，124,805,689 字节，`pg_restore --list` 校验通过。
+- 验证：线上 `sub2api` 容器 healthy、重启 0，`/health` 返回 200；启动后首页及网关请求返回 200。PostgreSQL、Redis 与代理容器未重启。
+
 ## 2026-09-27：账号异常通知改为「开始一次 + 恢复一次」并更新线上2
 
 - 原因：x6 上线后 24 小时发出 84 封，主要是 Grok 账号 #22 因 `grok upstream temporary error` 每次临时停调度 2 分钟、约每 5 分钟进出一次异常，每次重新进入都被当作新异常。
