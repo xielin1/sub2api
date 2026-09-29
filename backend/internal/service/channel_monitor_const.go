@@ -55,8 +55,8 @@ const (
 	providerOpenAIResponsesPath = "/v1/responses"
 	// providerAnthropicPath Anthropic Messages 路径。
 	providerAnthropicPath = "/v1/messages"
-	// providerGeminiPathTemplate Gemini generateContent 路径模板（含 model 占位）。
-	providerGeminiPathTemplate = "/v1beta/models/%s:generateContent"
+	// providerGeminiPathTemplate Gemini 流式 streamGenerateContent 路径模板（含 model 占位，alt=sse 返回 SSE）。
+	providerGeminiPathTemplate = "/v1beta/models/%s:streamGenerateContent?alt=sse"
 
 	// MonitorProviderOpenAI 等 provider 字符串常量（也是 ent enum 的实际值）。
 	// 后 4 个 provider（antigravity/kimi/zhipu/deepseek）为配额模式引入：

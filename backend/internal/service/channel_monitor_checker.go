@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -66,9 +67,14 @@ func runCheckForModel(ctx context.Context, provider, endpoint, apiKey, model str
 	challenge := generateChallenge()
 	mode := bodyOverrideMode(opts)
 
+	// 1. 流式探测：延迟优先取首个正文 token 到达时间，与上游状态页的首字延迟口径一致。
 	start := time.Now()
-	respText, rawBody, statusCode, err := callProvider(ctx, provider, endpoint, apiKey, model, challenge.Prompt, opts)
+	respText, rawBody, statusCode, firstTokenLatency, err := callProvider(ctx, provider, endpoint, apiKey, model, challenge.Prompt, opts)
 	latency := time.Since(start)
+	// 2. 没拿到流式正文（非 SSE 回包或失败）时，退回整次请求耗时。
+	if firstTokenLatency > 0 {
+		latency = firstTokenLatency
+	}
 	latencyMs := int(latency / time.Millisecond)
 	res.LatencyMs = &latencyMs
 
@@ -162,6 +168,10 @@ type providerAdapter struct {
 	buildHeaders func(apiKey string) map[string]string
 	textPath     string // gjson 提取响应文本的 path
 	extractText  func([]byte) string
+	// streamTextPath gjson 从单个 SSE data 事件中提取正文增量的 path。
+	streamTextPath string
+	// extractStreamText 需要按事件类型过滤时使用，优先于 streamTextPath。
+	extractStreamText func([]byte) string
 }
 
 // providerAdapters 全部已支持的 provider。键值即 MonitorProvider* 字符串。
@@ -183,6 +193,7 @@ var providerAdapters = map[string]providerAdapter{
 				"model":      model,
 				"messages":   []map[string]string{{"role": "user", "content": prompt}},
 				"max_tokens": monitorChallengeMaxTokens,
+				"stream":     true,
 			})
 		},
 		buildHeaders: func(apiKey string) map[string]string {
@@ -192,6 +203,8 @@ var providerAdapters = map[string]providerAdapter{
 			}
 		},
 		extractText: extractAnthropicMonitorText,
+		// content_block_delta 中只有 text_delta 带 delta.text，thinking 增量不会被计入。
+		streamTextPath: "delta.text",
 	},
 	MonitorProviderGemini: {
 		// Gemini 把 model 名写在 URL path 上：/v1beta/models/{model}:generateContent
@@ -208,7 +221,8 @@ var providerAdapters = map[string]providerAdapter{
 		buildHeaders: func(apiKey string) map[string]string {
 			return map[string]string{"x-goog-api-key": apiKey}
 		},
-		textPath: "candidates.0.content.parts.0.text",
+		textPath:       "candidates.0.content.parts.0.text",
+		streamTextPath: "candidates.0.content.parts.0.text",
 	},
 }
 
@@ -238,13 +252,14 @@ func newOpenAICompatibleChatAdapter(path string) providerAdapter {
 				"model":      model,
 				"messages":   []map[string]string{{"role": "user", "content": prompt}},
 				"max_tokens": monitorChallengeMaxTokens,
-				"stream":     false,
+				"stream":     true,
 			})
 		},
 		buildHeaders: func(apiKey string) map[string]string {
 			return map[string]string{"Authorization": "Bearer " + apiKey}
 		},
-		textPath: "choices.0.message.content",
+		textPath:       "choices.0.message.content",
+		streamTextPath: "choices.0.delta.content",
 	}
 }
 
@@ -257,13 +272,14 @@ var providerOpenAIResponsesAdapter = providerAdapter{
 			"instructions":      "You are a channel health-check endpoint. Answer the arithmetic challenge exactly and briefly.",
 			"input":             prompt,
 			"max_output_tokens": monitorChallengeMaxTokens,
-			"stream":            false,
+			"stream":            true,
 		})
 	},
 	buildHeaders: func(apiKey string) map[string]string {
 		return map[string]string{"Authorization": "Bearer " + apiKey}
 	},
-	textPath: "output.0.content.0.text",
+	textPath:          "output.0.content.0.text",
+	extractStreamText: extractOpenAIResponsesStreamText,
 }
 
 // providerAdapterFor 按 provider + api_mode 选择具体 adapter。
@@ -282,30 +298,98 @@ func providerAdapterFor(provider, apiMode string) (providerAdapter, string, bool
 //   - extractedText: 按 textPath 抽出的成功文本，仅在 status 2xx 时有意义；非 2xx 时通常为空串
 //   - rawBody: 完整响应体的字符串形式（已被 monitorResponseMaxBytes 截断），用于错误路径保留上游真实回包
 //   - status: HTTP 状态码
+//   - firstTokenLatency: 流式响应中首个正文增量到达的耗时；非流式回包或无正文时为 0
 //   - err: 网络 / 序列化错误
-func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt string, opts *CheckOptions) (extractedText, rawBody string, status int, err error) {
+func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt string, opts *CheckOptions) (extractedText, rawBody string, status int, firstTokenLatency time.Duration, err error) {
+	// 1. 选择 adapter 并构造请求。
 	requestedAPIMode := checkAPIMode(opts)
 	if err := validateAPIMode(provider, requestedAPIMode); err != nil {
-		return "", "", 0, err
+		return "", "", 0, 0, err
 	}
 	adapter, apiMode, ok := providerAdapterFor(provider, requestedAPIMode)
 	if !ok {
-		return "", "", 0, fmt.Errorf("unsupported provider %q", provider)
+		return "", "", 0, 0, fmt.Errorf("unsupported provider %q", provider)
 	}
 	body, err := buildRequestBody(adapter, provider, apiMode, model, prompt, opts)
 	if err != nil {
-		return "", "", 0, err
+		return "", "", 0, 0, err
 	}
 	headers := mergeHeaders(adapter.buildHeaders(apiKey), opts)
 	full := joinURL(endpoint, adapter.buildPath(model))
-	respBytes, status, err := postRawJSON(ctx, full, body, headers)
+
+	// 2. 发起请求，计时从发请求开始。
+	start := time.Now()
+	resp, err := postMonitorRequest(ctx, full, body, headers)
 	if err != nil {
-		return "", "", status, err
+		return "", "", 0, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	reader := io.LimitReader(resp.Body, monitorResponseMaxBytes)
+
+	// 3. 上游返回 SSE：逐事件累积正文，并记录首个正文增量的到达时间。
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 && strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream") {
+		text, firstToken, err := readMonitorStream(reader, start, adapter)
+		if err != nil {
+			return "", "", resp.StatusCode, 0, err
+		}
+		return text, "", resp.StatusCode, firstToken, nil
+	}
+
+	// 4. 错误响应，或上游忽略 stream 返回整包 JSON（如 replace 模式未开 stream）：按整包解析。
+	respBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return "", "", resp.StatusCode, 0, fmt.Errorf("read body: %w", err)
 	}
 	if provider == MonitorProviderOpenAI && apiMode == MonitorAPIModeResponses {
-		return extractOpenAIResponsesText(respBytes), string(respBytes), status, nil
+		return extractOpenAIResponsesText(respBytes), string(respBytes), resp.StatusCode, 0, nil
 	}
-	return extractMonitorResponseText(adapter, respBytes), string(respBytes), status, nil
+	return extractMonitorResponseText(adapter, respBytes), string(respBytes), resp.StatusCode, 0, nil
+}
+
+// readMonitorStream 读取 SSE 响应，拼接全部正文增量，返回正文与首个正文增量的到达耗时。
+func readMonitorStream(reader io.Reader, start time.Time, adapter providerAdapter) (string, time.Duration, error) {
+	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(make([]byte, 0, 4096), monitorResponseMaxBytes)
+	var text strings.Builder
+	var firstToken time.Duration
+	for scanner.Scan() {
+		// 1. 只处理 data 行，event / 注释 / 空行 / [DONE] 直接跳过。
+		data, ok := strings.CutPrefix(scanner.Text(), "data:")
+		if !ok {
+			continue
+		}
+		data = strings.TrimSpace(data)
+		if data == "" || data == "[DONE]" {
+			continue
+		}
+		// 2. 按 provider 提取正文增量，thinking / 元数据事件不计入。
+		var delta string
+		if adapter.extractStreamText != nil {
+			delta = adapter.extractStreamText([]byte(data))
+		} else {
+			delta = gjson.Get(data, adapter.streamTextPath).String()
+		}
+		if delta == "" {
+			continue
+		}
+		// 3. 第一次拿到正文时记录首字延迟。
+		if firstToken == 0 {
+			firstToken = time.Since(start)
+		}
+		text.WriteString(delta)
+	}
+	if err := scanner.Err(); err != nil {
+		return "", 0, fmt.Errorf("read stream: %w", err)
+	}
+	return text.String(), firstToken, nil
+}
+
+// extractOpenAIResponsesStreamText 只取 Responses 流中的正文增量事件，忽略 reasoning 等其他 delta。
+func extractOpenAIResponsesStreamText(data []byte) string {
+	if gjson.GetBytes(data, "type").String() != "response.output_text.delta" {
+		return ""
+	}
+	return gjson.GetBytes(data, "delta").String()
 }
 
 func extractMonitorResponseText(adapter providerAdapter, respBytes []byte) string {
@@ -456,7 +540,7 @@ var bodyMergeKeyDenyList = map[string]map[string]bool{
 	MonitorProviderOpenAI + ":" + MonitorAPIModeChatCompletions: {"model": true, "messages": true, "stream": true},
 	MonitorProviderOpenAI + ":" + MonitorAPIModeResponses:       {"model": true, "instructions": true, "input": true, "stream": true},
 	MonitorProviderGrok:      {"model": true, "messages": true, "stream": true},
-	MonitorProviderAnthropic: {"model": true, "messages": true},
+	MonitorProviderAnthropic: {"model": true, "messages": true, "stream": true},
 	MonitorProviderGemini:    {"contents": true},
 	// 国产 3 家与 OpenAI Chat Completions 同构。
 	MonitorProviderKimi:     {"model": true, "messages": true, "stream": true},
@@ -530,30 +614,26 @@ func hasNonEmptyBodyValue(v any) bool {
 	}
 }
 
-// postRawJSON 发送 POST + 已序列化好的 JSON 字节，限制响应体大小，返回响应字节、HTTP status、错误。
+// postMonitorRequest 发送 POST + 已序列化好的 JSON 字节，返回未读取的响应，由调用方按 SSE 或 JSON 读取并关闭。
 // adapter 自行 marshal 是为了精确控制字段顺序与类型，所以这里直接收 []byte 而不是 any。
-func postRawJSON(ctx context.Context, fullURL string, payload []byte, headers map[string]string) ([]byte, int, error) {
+func postMonitorRequest(ctx context.Context, fullURL string, payload []byte, headers map[string]string) (*http.Response, error) {
+	// 1. 构造请求，同时接受 SSE 与 JSON（错误响应通常是 JSON）。
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullURL, bytes.NewReader(payload))
 	if err != nil {
-		return nil, 0, fmt.Errorf("build request: %w", err)
+		return nil, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", "text/event-stream, application/json")
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
+	// 2. 发送请求。
 	resp, err := monitorHTTPClient.Do(req)
 	if err != nil {
-		return nil, 0, fmt.Errorf("do request: %w", err)
+		return nil, fmt.Errorf("do request: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, monitorResponseMaxBytes))
-	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("read body: %w", err)
-	}
-	return respBody, resp.StatusCode, nil
+	return resp, nil
 }
 
 // joinURL 保留 base 的上游路径前缀，并避免重复追加已有的 API 路径前缀。
