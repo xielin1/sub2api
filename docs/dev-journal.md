@@ -1,5 +1,12 @@
 # 开发记录
 
+## 2026-10-06：合并官方 0.2.13 并更新线上2
+
+- 合并：`main` 合入 `upstream/main`（`b8dece900`，官方 0.2.13，62 个提交：TypeSafe（Jev System One）平台、充值赠送阶梯、余额在途预扣防透支、API Key 创建数量与频率限制、Claude 重置兑换、GPT-6.1 Sol、axios 1.20.0 等），合并提交 `71fe593fa`。冲突：`VERSION`（改为 `0.2.13-x1`）；`account_service.go`/`admin_account.go` 的平台×类型校验（本地 CPR 校验与上游 TypeSafe 校验均保留）；前端 `AccountPlatform`/`AccountType`（合入 `typesafe`，保留 `cpr`）。新迁移 `241_add_payment_order_bonus_amount.sql`、`241_add_typesafe_platform.sql`。
+- 验证：`go build ./...`；service/handler/repository/migrations/domain 单元测试通过；前端类型检查与生产构建通过。vitest 6 个失败：`settings.authSourceDefaults.spec.ts` 3 个为上游新增 `typesafe` 后未更新的「5 平台」断言（上游原样）；`EditAccountModal.grokMediaEligibility.spec.ts` 3 个合并前已失败。
+- 发布：本地用 pnpm 9.15.9 构建前端（pnpm 11 不认 `pnpm.overrides`，会改锁文件），`-tags embed` 交叉编译 Linux amd64，基于 `sub2api:0.2.10-x1` 替换程序生成 `sub2api:0.2.13-x1`，仅重建 `sub2api` 容器。备份及原 Compose 位于 `/opt/sub2api/backups/release-0.2.13-x1`，`pg_restore --list` 1216 项；旧镜像保留为 `sub2api:rollback-before-0.2.13-x1`。两个新迁移已执行（新增列与放宽 CHECK 约束），回退切旧镜像可直接运行，无需回滚数据。
+- 线上：容器 healthy、重启 0，启动后无 ERROR；公网首页、`/health`、公开配置 200，版本 `0.2.13-x1`；渠道监控的真实模型请求（gpt-5.6-sol、grok、claude-opus-5-5）返回 200。
+
 ## 2026-09-30：所有 OpenAI 分组开放 gpt-6.1-sol（线上2配置）
 
 - 代码现状：代码未内置 `gpt-6.1-sol`，未知模型名原样转发上游；计费使用线上远程价格文件 `/app/data/model_pricing.json` 中已有的 `gpt-6.1-sol` 价格，无需改代码。
