@@ -1,5 +1,19 @@
 # 开发记录
 
+## 2026-10-10：合并官方 0.2.15 并更新线上2
+
+- 合并：`main` 合入 `upstream/main`（`3a6fd1c9d`，官方 0.2.15，146 个提交：接入 Cline、Command Code 平台；平台白名单改由应用层平台清单校验；provider profile 收敛多协议端点；Go 升级到 1.27.2 与 x/net 安全修复；渠道监控要求有请求样本再评分；单请求输出 TPS 等），合并提交 `de4ad6219`。冲突：`VERSION`（改为 `0.2.15-x1`）；`channel_monitor_checker.go`（保留本地流式读取，请求路径改用上游 `monitorRequestPath`）；`openai_gateway_forward.go`（采用上游更宽的 `invalidEncryptedContentError` 判定，本地 turn-state 拒绝判断同样使用它）；前端 `AccountPlatform` 改用上游平台清单写法，`AccountType` 保留 `cpr`；两个前端测试文件合并双方新增内容。新迁移 `242_drop_platform_check_constraints.sql`（删除两个平台 CHECK 约束）。
+- 验证：`go build ./...`；service/handler/domain/server/migrations 单元测试通过；前端（pnpm 9.15.9）类型检查、生产构建通过，冲突涉及的两个测试文件 121 个用例通过。
+- 发布：`-tags embed` 交叉编译 Linux amd64，基于 `sub2api:0.2.14-x1` 替换程序生成 `sub2api:0.2.15-x1`，仅重建 `sub2api` 容器。备份及原 Compose 位于 `/opt/sub2api/backups/release-0.2.15-x1`，`pg_restore --list` 1216 项；旧镜像保留为 `sub2api:rollback-before-0.2.15-x1`。迁移只删除约束，回退切旧镜像可直接运行，无需回滚数据。
+- 线上：容器 healthy、重启 0，启动后无 ERROR；`/health` 200，公开配置版本 `0.2.15-x1`；上线后 `/v1/messages`、`/v1/responses`、`/v1/chat/completions` 请求均返回 200。
+
+## 2026-10-07：合并官方 0.2.14 并更新线上2
+
+- 合并：`main` 合入 `upstream/main`（`3f1a2ea0a`，官方 0.2.14，8 个提交：修复 EasyPay 回调签名复用伪造、全新安装不再使用可猜测的管理员账号、远程 Codex 模型目录支持 API Key 发现、前端依赖审计修复），合并提交 `2d4cc2254`。冲突仅 `VERSION`（改为 `0.2.14-x1`）。无新迁移。
+- 验证：`go build ./...`；payment/setup/service/handler 单元测试通过；前端（pnpm 9.15.9）类型检查与生产构建通过。
+- 发布：`-tags embed` 交叉编译 Linux amd64，基于 `sub2api:0.2.13-x1` 替换程序生成 `sub2api:0.2.14-x1`，仅重建 `sub2api` 容器。备份及原 Compose 位于 `/opt/sub2api/backups/release-0.2.14-x1`，`pg_restore --list` 1216 项；旧镜像保留为 `sub2api:rollback-before-0.2.14-x1`，回退直接切回旧镜像。
+- 线上：容器 healthy、重启 0，启动后无 ERROR；`/health` 200，公开配置版本 `0.2.14-x1`；上线后渠道监控请求均返回 200。
+
 ## 2026-10-06：合并官方 0.2.13 并更新线上2
 
 - 合并：`main` 合入 `upstream/main`（`b8dece900`，官方 0.2.13，62 个提交：TypeSafe（Jev System One）平台、充值赠送阶梯、余额在途预扣防透支、API Key 创建数量与频率限制、Claude 重置兑换、GPT-6.1 Sol、axios 1.20.0 等），合并提交 `71fe593fa`。冲突：`VERSION`（改为 `0.2.13-x1`）；`account_service.go`/`admin_account.go` 的平台×类型校验（本地 CPR 校验与上游 TypeSafe 校验均保留）；前端 `AccountPlatform`/`AccountType`（合入 `typesafe`，保留 `cpr`）。新迁移 `241_add_payment_order_bonus_amount.sql`、`241_add_typesafe_platform.sql`。
