@@ -16,9 +16,9 @@
   <div
     v-else-if="compactHomeEnabled"
     data-testid="compact-home"
-    class="flex min-h-screen flex-col bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-white"
+    class="flex min-h-screen flex-col bg-sand-50 text-sand-900 dark:bg-ink-950 dark:text-white"
   >
-    <header class="border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-dark-800">
+    <header class="border-b border-sand-200 px-4 py-4 sm:px-6 dark:border-ink-800">
       <nav class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div class="flex min-w-0 flex-1 items-center gap-3">
           <img
@@ -35,7 +35,7 @@
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sand-500 hover:bg-sand-100 dark:text-ink-400 dark:hover:bg-ink-800"
             :title="t('home.viewDocs')"
           >
             <Icon name="book" size="md" />
@@ -43,14 +43,14 @@
           <router-link
             v-if="showModelPlazaEntry"
             to="/model-plaza"
-            class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-sand-500 hover:bg-sand-100 hover:text-sand-700 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-white"
             :title="t('nav.modelPlaza')"
           >
             <Icon name="grid" size="md" />
             <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
           </router-link>
           <button
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sand-500 hover:bg-sand-100 dark:text-ink-400 dark:hover:bg-ink-800"
             :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
             @click="toggleTheme"
           >
@@ -59,7 +59,7 @@
           </button>
           <router-link
             :to="isAuthenticated ? dashboardPath : '/login'"
-            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-sand-900 px-4 py-2 text-sm font-medium text-white hover:bg-sand-800 dark:bg-white dark:text-sand-900 dark:hover:bg-sand-200"
           >
             {{ isAuthenticated ? t('home.dashboard') : t('home.login') }}
           </router-link>
@@ -75,17 +75,17 @@
           class="mx-auto mb-6 h-20 w-20 rounded-2xl object-contain"
         />
         <h1 class="[overflow-wrap:anywhere] text-3xl font-bold md:text-4xl">{{ siteName }}</h1>
-        <p class="mt-4 whitespace-pre-wrap [overflow-wrap:anywhere] text-base text-gray-600 dark:text-dark-300">{{ siteSubtitle }}</p>
+        <p class="mt-4 whitespace-pre-wrap [overflow-wrap:anywhere] text-base text-sand-600 dark:text-ink-300">{{ siteSubtitle }}</p>
         <router-link
           :to="isAuthenticated ? dashboardPath : '/login'"
-          class="mt-8 inline-flex min-h-10 items-center justify-center rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+          class="mt-8 inline-flex min-h-10 items-center justify-center rounded-lg bg-clay-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-clay-700"
         >
           {{ isAuthenticated ? t('home.goToDashboard') : t('home.login') }}
         </router-link>
       </div>
     </main>
 
-    <footer class="min-w-0 border-t border-gray-200 px-4 py-5 text-center text-sm text-gray-500 [overflow-wrap:anywhere] sm:px-6 dark:border-dark-800 dark:text-dark-400">
+    <footer class="min-w-0 border-t border-sand-200 px-4 py-5 text-center text-sm text-sand-500 [overflow-wrap:anywhere] sm:px-6 dark:border-ink-800 dark:text-ink-400">
       &copy; {{ currentYear }} {{ siteName }}
     </footer>
   </div>
@@ -137,7 +137,7 @@
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            class="rounded-lg p-2 text-sand-500 transition-colors hover:bg-sand-100 hover:text-sand-700 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-white"
             :title="t('home.viewDocs')"
           >
             <Icon name="book" size="md" />
@@ -147,7 +147,7 @@
           <router-link
             v-if="showModelPlazaEntry"
             to="/model-plaza"
-            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-sand-500 transition-colors hover:bg-sand-100 hover:text-sand-700 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-white"
             :title="t('nav.modelPlaza')"
           >
             <Icon name="grid" size="md" />
@@ -158,7 +158,7 @@
           <router-link
             v-if="channelMonitorEnabled"
             to="/monitor"
-            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            class="inline-flex items-center gap-1.5 rounded-lg p-2 text-sm text-sand-500 transition-colors hover:bg-sand-100 hover:text-sand-700 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-white"
             :title="t('home.trust.statusNav')"
           >
             <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -168,7 +168,7 @@
           <!-- Theme Toggle -->
           <button
             @click="toggleTheme"
-            class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            class="rounded-lg p-2 text-sand-500 transition-colors hover:bg-sand-100 hover:text-sand-700 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-white"
             :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
           >
             <Icon v-if="isDark" name="sun" size="md" />
@@ -179,16 +179,16 @@
           <router-link
             v-if="isAuthenticated"
             :to="dashboardPath"
-            class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            class="inline-flex items-center gap-1.5 rounded-full bg-sand-900 py-1 pl-1 pr-2.5 transition-colors hover:bg-sand-800 dark:bg-sand-800 dark:hover:bg-sand-700"
           >
             <span
-              class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-semibold text-white"
+              class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-clay-400 to-clay-600 text-[10px] font-semibold text-white"
             >
               {{ userInitial }}
             </span>
             <span class="text-xs font-medium text-white">{{ t('home.dashboard') }}</span>
             <svg
-              class="h-3 w-3 text-gray-400"
+              class="h-3 w-3 text-sand-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -204,7 +204,7 @@
           <router-link
             v-else
             to="/login"
-            class="inline-flex items-center rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+            class="inline-flex items-center rounded-full bg-sand-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-sand-800 dark:bg-sand-800 dark:hover:bg-sand-700"
           >
             {{ t('home.login') }}
           </router-link>
@@ -224,14 +224,14 @@
         </div>
 
         <h1
-          class="mb-4 [overflow-wrap:anywhere] text-4xl font-bold text-gray-900 md:text-5xl lg:text-6xl dark:text-[#f3f1ea]"
+          class="mb-4 [overflow-wrap:anywhere] text-4xl font-bold text-sand-900 md:text-5xl lg:text-6xl dark:text-[#f3f1ea]"
         >
           {{ siteName }}
         </h1>
-        <p class="mb-3 text-lg text-gray-600 dark:text-[#c9c4b6] md:text-xl">
+        <p class="mb-3 text-lg text-sand-600 dark:text-[#c9c4b6] md:text-xl">
           {{ siteSubtitle }}
         </p>
-        <p class="mb-8 max-w-xl text-sm leading-relaxed text-gray-500 dark:text-[#8f897b]">
+        <p class="mb-8 max-w-xl text-sm leading-relaxed text-sand-500 dark:text-[#8f897b]">
           {{ t('home.aphelion.tagline') }}
         </p>
 
@@ -318,7 +318,7 @@
           <button
             v-if="contactInfo"
             type="button"
-            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300/70 bg-white/70 px-8 py-3 text-base font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sand-300/70 bg-white/70 px-8 py-3 text-base font-medium text-sand-700 backdrop-blur-sm transition-colors hover:bg-white dark:border-[#3a382f] dark:bg-white/5 dark:text-[#d9d4c6] dark:hover:bg-white/10"
             @click="contactDialogOpen = true"
           >
             <Icon name="chatBubble" size="md" :stroke-width="2" />
@@ -334,20 +334,20 @@
         <!-- 1. 累计服务数据（接口失败时整块不渲染） -->
         <div v-if="publicStats" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div class="trust-card text-center">
-            <p class="text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_requests) }}</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.totalRequests') }}</p>
+            <p class="text-3xl font-bold text-sand-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_requests) }}</p>
+            <p class="mt-1 text-sm text-sand-500 dark:text-[#8f897b]">{{ t('home.trust.totalRequests') }}</p>
           </div>
           <div class="trust-card text-center">
-            <p class="text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_tokens) }}</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.totalTokens') }}</p>
+            <p class="text-3xl font-bold text-sand-900 dark:text-[#f3f1ea]">{{ formatCompact(publicStats.total_tokens) }}</p>
+            <p class="mt-1 text-sm text-sand-500 dark:text-[#8f897b]">{{ t('home.trust.totalTokens') }}</p>
           </div>
           <router-link v-if="channelMonitorEnabled" to="/monitor" class="trust-card text-center transition-colors hover:border-[#d66b4d]/50">
             <!-- 真实数据：各监控 7 天可用率均值；全部正常为绿点，否则为黄点 -->
-            <p class="flex items-center justify-center gap-2 text-3xl font-bold text-gray-900 dark:text-[#f3f1ea]">
+            <p class="flex items-center justify-center gap-2 text-3xl font-bold text-sand-900 dark:text-[#f3f1ea]">
               <span class="h-3 w-3 rounded-full" :class="monitorSummary?.allOperational ? 'bg-emerald-500' : 'bg-amber-500'"></span>
               {{ monitorSummary ? `${monitorSummary.availability.toFixed(2)}%` : '-' }}
             </p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.statusDesc') }}</p>
+            <p class="mt-1 text-sm text-sand-500 dark:text-[#8f897b]">{{ t('home.trust.statusDesc') }}</p>
           </router-link>
         </div>
 
@@ -355,8 +355,8 @@
         <div v-if="plazaModels.length > 0">
           <div class="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.trust.modelsTitle') }}</h2>
-              <p class="mt-1 text-sm text-gray-500 dark:text-[#8f897b]">{{ t('home.trust.modelsDesc') }}</p>
+              <h2 class="text-2xl font-bold text-sand-900 dark:text-[#f3f1ea]">{{ t('home.trust.modelsTitle') }}</h2>
+              <p class="mt-1 text-sm text-sand-500 dark:text-[#8f897b]">{{ t('home.trust.modelsDesc') }}</p>
             </div>
             <router-link to="/model-plaza" class="shrink-0 text-sm font-medium text-[#d66b4d] hover:underline">
               {{ t('home.trust.viewAllModels') }}
@@ -365,12 +365,12 @@
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div v-for="m in plazaModels" :key="m.key" class="trust-card flex items-center justify-between gap-3">
               <div class="min-w-0">
-                <p class="truncate font-mono text-sm font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ m.name }}</p>
-                <p class="text-xs text-gray-500 dark:text-[#8f897b]">{{ m.group }}</p>
+                <p class="truncate font-mono text-sm font-semibold text-sand-900 dark:text-[#f3f1ea]">{{ m.name }}</p>
+                <p class="text-xs text-sand-500 dark:text-[#8f897b]">{{ m.group }}</p>
               </div>
-              <div class="shrink-0 text-right text-xs text-gray-600 dark:text-[#c9c4b6]">
+              <div class="shrink-0 text-right text-xs text-sand-600 dark:text-[#c9c4b6]">
                 <p>{{ t('home.trust.input') }} ${{ m.input }} / {{ t('home.trust.output') }} ${{ m.output }}</p>
-                <p class="text-gray-400 dark:text-[#8f897b]">{{ t('home.trust.perMillion') }}</p>
+                <p class="text-sand-400 dark:text-[#8f897b]">{{ t('home.trust.perMillion') }}</p>
               </div>
             </div>
           </div>
@@ -378,11 +378,11 @@
 
         <!-- 3. 用户痛点（复用已有文案） -->
         <div>
-          <h2 class="mb-5 text-center text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.painPoints.title') }}</h2>
+          <h2 class="mb-5 text-center text-2xl font-bold text-sand-900 dark:text-[#f3f1ea]">{{ t('home.painPoints.title') }}</h2>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div v-for="key in painPointKeys" :key="key" class="trust-card">
-              <p class="font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ t(`home.painPoints.items.${key}.title`) }}</p>
-              <p class="mt-2 text-sm leading-relaxed text-gray-500 dark:text-[#8f897b]">{{ t(`home.painPoints.items.${key}.desc`) }}</p>
+              <p class="font-semibold text-sand-900 dark:text-[#f3f1ea]">{{ t(`home.painPoints.items.${key}.title`) }}</p>
+              <p class="mt-2 text-sm leading-relaxed text-sand-500 dark:text-[#8f897b]">{{ t(`home.painPoints.items.${key}.desc`) }}</p>
             </div>
           </div>
           <div class="mt-6 flex flex-wrap items-center justify-center gap-2">
@@ -394,14 +394,14 @@
 
         <!-- 4. 最近更新（后台公告，无公开公告时不渲染） -->
         <div v-if="announcements.length > 0">
-          <h2 class="mb-5 text-2xl font-bold text-gray-900 dark:text-[#f3f1ea]">{{ t('home.trust.updatesTitle') }}</h2>
+          <h2 class="mb-5 text-2xl font-bold text-sand-900 dark:text-[#f3f1ea]">{{ t('home.trust.updatesTitle') }}</h2>
           <ul class="flex flex-col gap-3">
             <li v-for="a in announcements" :key="a.id" class="trust-card">
               <div class="flex items-baseline justify-between gap-3">
-                <p class="font-semibold text-gray-900 dark:text-[#f3f1ea]">{{ a.title }}</p>
-                <span class="shrink-0 text-xs text-gray-400 dark:text-[#8f897b]">{{ a.created_at.slice(0, 10) }}</span>
+                <p class="font-semibold text-sand-900 dark:text-[#f3f1ea]">{{ a.title }}</p>
+                <span class="shrink-0 text-xs text-sand-400 dark:text-[#8f897b]">{{ a.created_at.slice(0, 10) }}</span>
               </div>
-              <p class="mt-1 line-clamp-2 whitespace-pre-line text-sm text-gray-500 dark:text-[#8f897b]">{{ a.content }}</p>
+              <p class="mt-1 line-clamp-2 whitespace-pre-line text-sm text-sand-500 dark:text-[#8f897b]">{{ a.content }}</p>
             </li>
           </ul>
         </div>
@@ -423,7 +423,7 @@
           >
             <Icon name="chatBubble" size="md" :stroke-width="2" />
           </div>
-          <p class="pt-1 text-sm leading-relaxed text-gray-600 dark:text-dark-300">
+          <p class="pt-1 text-sm leading-relaxed text-sand-600 dark:text-ink-300">
             {{ t('home.aphelion.contactHint') }}
           </p>
         </div>
@@ -434,22 +434,22 @@
           :href="contactUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-dark-700 dark:bg-dark-900/40 dark:text-amber-400 dark:hover:border-amber-500/50 dark:hover:bg-amber-900/20"
+          class="block rounded-xl border border-sand-200 bg-sand-50 px-4 py-3 text-sm font-medium text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-50 dark:border-ink-700 dark:bg-ink-900/40 dark:text-amber-400 dark:hover:border-amber-500/50 dark:hover:bg-amber-900/20"
         >
-          <span class="mb-0.5 block text-xs font-normal text-gray-500 dark:text-dark-400">
+          <span class="mb-0.5 block text-xs font-normal text-sand-500 dark:text-ink-400">
             {{ t('home.aphelion.contactLinkLabel') }}
           </span>
           <span class="[overflow-wrap:anywhere]">{{ contactInfo }}</span>
         </a>
         <div
           v-else
-          class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/40"
+          class="rounded-xl border border-sand-200 bg-sand-50 px-4 py-3 dark:border-ink-700 dark:bg-ink-900/40"
         >
-          <span class="mb-0.5 block text-xs text-gray-500 dark:text-dark-400">
+          <span class="mb-0.5 block text-xs text-sand-500 dark:text-ink-400">
             {{ t('home.aphelion.contactTextLabel') }}
           </span>
           <span
-            class="block select-all font-mono text-base font-semibold tracking-wide text-gray-900 [overflow-wrap:anywhere] dark:text-white"
+            class="block select-all font-mono text-base font-semibold tracking-wide text-sand-900 [overflow-wrap:anywhere] dark:text-white"
           >
             {{ contactInfo }}
           </span>
@@ -475,11 +475,11 @@
     </BaseDialog>
 
     <!-- Footer -->
-    <footer class="relative z-10 border-t border-gray-200/50 px-6 py-8 dark:border-dark-800/50">
+    <footer class="relative z-10 border-t border-sand-200/50 px-6 py-8 dark:border-ink-800/50">
       <div
         class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:text-left"
       >
-        <p class="text-sm text-gray-500 dark:text-dark-400">
+        <p class="text-sm text-sand-500 dark:text-ink-400">
           &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
         </p>
         <div class="flex items-center gap-4">
@@ -488,7 +488,7 @@
             :href="docUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-dark-400 dark:hover:text-white"
+            class="text-sm text-sand-500 transition-colors hover:text-sand-700 dark:text-ink-400 dark:hover:text-white"
           >
             {{ t('home.docs') }}
           </a>
@@ -676,7 +676,7 @@ onMounted(() => {
 <style scoped>
 /* 信任区块卡片：与首页暖色主题一致 */
 .trust-card {
-  @apply rounded-xl border border-gray-200/70 bg-white/70 p-4 backdrop-blur-sm dark:border-[#3a382f] dark:bg-white/5;
+  @apply rounded-xl border border-sand-200/70 bg-white/70 p-4 backdrop-blur-sm dark:border-[#3a382f] dark:bg-white/5;
 }
 
 /* ==========================================================================

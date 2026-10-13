@@ -1,5 +1,25 @@
 # 开发记录
 
+## 2026-10-13：后台主色恢复上游青色，首页保留陶土色，发布 0.2.15-x6
+
+- 改动：反向应用 `917d90241`，主色、灰阶、深色背景及引导、登录背景、用量页、渠道矩阵、平台默认色恢复上游青色与冷灰；首页改用专用色名 `clay`（陶土橙）、`sand`（暖米灰）、`ink`（暖黑），外观不变；全局悬浮的销售招募入口改为青色。智商雷达路由去掉 `descriptionKey`，避免长描述挤压顶栏。
+- 验证：前端构建与 vue-tsc 通过；本地代理线上数据截图核对仪表盘（亮/暗）、渠道监控、智商雷达、首页。
+- 发布：服务器 2 切换为 `sub2api:0.2.15-x6`（基于 x5 替换程序），仅重建 sub2api 容器，无数据库迁移；healthy、重启 0、无 ERROR，公网 `/health` 200。程序 SHA256 `badd6aaa31a62f949818cf97df2c9b5c4d2c042184d9c754e663c5f826fbabe0`。回退镜像 `sub2api:rollback-before-0.2.15-x6`，备份目录 `/opt/sub2api/backups/release-0.2.15-x6-teal`。
+
+## 2026-10-13：智商雷达接入 GPT-不降智与企业级分组，发布 0.2.15-x5
+
+- 修复：Responses 协议的智商雷达请求原沿用探活的「简短回答算术题」系统指令，会诱导模型不推理；改为中性指令。服务器 2 切换为 `sub2api:0.2.15-x5`（基于 x4 替换程序），仅重建 sub2api 容器，无数据库迁移；回退镜像 `sub2api:rollback-before-0.2.15-x5`，备份目录 `/opt/sub2api/backups/release-0.2.15-x5-iq-instructions`。程序 SHA256 `58f72d616d313b09c6fbcb2db425612fa4dcb94d8d6ed44fa0156122741ff8f5`。
+- 配置（经管理接口）：新建监控 27「智商雷达 · GPT-不降智」（分组 54，复用 key 38）与 28「智商雷达 · GPT Pro 企业级」（分组 53，复用 key 37）；endpoint `https://mdai.life`，Responses 协议，模型 `gpt-6.1-sol`，merge 请求体 `{"reasoning":{"effort":"high"}}`，间隔 3600 秒。
+- 验证：首轮两组均答出 21（operational），耗时约 69 秒；usage_logs 记录 reasoning_effort=high、输出约 1.7k token。首次误填 ideagates endpoint 产生的两条 401 记录已删除。
+
+## 2026-10-13：新增智商雷达，发布 0.2.15-x4
+
+- 改动：渠道监控新增检测方式 `iq`（智商雷达），发送糖果推理题，回答出现独立的 21 记 operational，其他答案记 failed，请求失败记 error；单次请求超时 300 秒、输出上限 16000 token，不按耗时降级。登录用户在 `/iq-radar` 查看各分组通过率、60 次时间线与未通过时的回答结尾；iq 监控不进入公开渠道状态页。
+- 迁移：`246_channel_monitor_iq_mode.sql` 放宽 `channel_monitors.check_mode` 约束加入 `iq`。
+- 验证：后端 build、渠道监控 service 与 handler/routes/migrations 单元测试通过；前端 vue-tsc 通过。`ChannelStatusV1View.details.spec.ts` 4 个用例在改动前即失败（缺 Pinia），与本次无关。
+- 发布：服务器 2 切换为 `sub2api:0.2.15-x4`（基于 x3 替换程序），仅重建 sub2api 容器；healthy、重启 0，迁移 246 已执行，公网 `/health` 200、`/iq-radar` 200、`/api/v1/iq-radar` 未登录 401。程序 SHA256 `4494d3941d778a8b8c6d6eb2826c26a1b6167dbc6748c2568f979e2b1f0d9d4d`。
+- 回退：备份在 `server-2:/opt/sub2api/backups/release-0.2.15-x4-iq-radar`（原 Compose、PostgreSQL dump，`pg_restore --list` 1216 项），回退镜像 `sub2api:rollback-before-0.2.15-x4-iq-radar`；迁移只放宽约束，回退切旧镜像可直接运行（若已建 iq 监控需先停用或删除）。
+
 ## 2026-10-10：监控绿色耗时范围调整为 10 秒，发布 0.2.15-x3
 
 - 改动：成功探测的正文首字耗时不超过 10 秒（含恰好 10 秒）记为 operational；超过 10 秒记为 degraded。沿用原有判定函数，仅调整共享阈值和比较符，不修改失败判定或历史记录。

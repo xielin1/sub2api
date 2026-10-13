@@ -245,16 +245,16 @@ const innerStyle = computed(() => ({
 <style scoped>
 /* 1. 默认停在右下角；拖动后改用保存的坐标。 */
 .recruitment-widget { position: fixed; z-index: 35; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); max-width: calc(100vw - 24px); }
-/* 2. 入口使用站点主色（陶土暖橙），浅底深字；禁用触摸滚动以支持手机拖动。 */
-.recruitment-launcher { display: flex; align-items: center; gap: 10px; max-width: 240px; padding: 9px 14px; color: #a24a33; background: #fcf5f1; border: 1px solid #f2cdbd; border-radius: 999px; box-shadow: 0 4px 16px #6c342714; cursor: grab; touch-action: none; user-select: none; transition: box-shadow .15s; }
-.recruitment-launcher:hover { box-shadow: 0 6px 20px #6c342724; }
-.recruitment-launcher-dragging { cursor: grabbing; box-shadow: 0 10px 28px #6c342733; }
+/* 2. 入口使用站点主色（青色），浅底深字；禁用触摸滚动以支持手机拖动。 */
+.recruitment-launcher { display: flex; align-items: center; gap: 10px; max-width: 240px; padding: 9px 14px; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 999px; box-shadow: 0 4px 16px #134e4a14; cursor: grab; touch-action: none; user-select: none; transition: box-shadow .15s; }
+.recruitment-launcher:hover { box-shadow: 0 6px 20px #134e4a24; }
+.recruitment-launcher-dragging { cursor: grabbing; box-shadow: 0 10px 28px #134e4a33; }
 .recruitment-launcher span { display: grid; text-align: left; min-width: 0; }
 .recruitment-launcher strong { font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recruitment-launcher small { font-size: 11px; line-height: 1.3; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .75; }
-.recruitment-widget button:focus-visible, .recruitment-panel button:focus-visible { outline: 3px solid #d66b4d; outline-offset: 3px; }
+.recruitment-widget button:focus-visible, .recruitment-panel button:focus-visible { outline: 3px solid #14b8a6; outline-offset: 3px; }
 /* 3. 展开面板：贴着入口出现，不遮罩页面；内容按比例缩放完整显示，不滚动。 */
-.recruitment-panel { position: fixed; z-index: 36; overflow: hidden; border-radius: 24px; box-shadow: 0 20px 60px #2c2a2440, 0 0 0 1px #f2cdbd; background: white; animation: recruitment-pop .18s ease-out; }
+.recruitment-panel { position: fixed; z-index: 36; overflow: hidden; border-radius: 24px; box-shadow: 0 20px 60px #1e293b40, 0 0 0 1px #99f6e4; background: white; animation: recruitment-pop .18s ease-out; }
 .recruitment-panel-inner { position: relative; transform-origin: top left; }
 .recruitment-panel-close { position: absolute; top: 12px; right: 14px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff9df; color: #776024; border: 1px solid #d5bc7166; }
 @keyframes recruitment-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
@@ -264,7 +264,7 @@ const innerStyle = computed(() => ({
   .recruitment-launcher { padding: 8px 12px; gap: 8px; }
   .recruitment-launcher small { display: none; }
 }
-/* 5. 深色模式使用首页暖黑底色。 */
-:global(.dark .recruitment-launcher) { color: #e9ad96; background: #26261f; border-color: #3a382f; box-shadow: 0 4px 16px #00000040; }
-:global(.dark .recruitment-panel) { box-shadow: 0 20px 60px #00000080, 0 0 0 1px #3a382f; }
+/* 5. 深色模式使用站点深色底色。 */
+:global(.dark .recruitment-launcher) { color: #5eead4; background: #1e293b; border-color: #334155; box-shadow: 0 4px 16px #00000040; }
+:global(.dark .recruitment-panel) { box-shadow: 0 20px 60px #00000080, 0 0 0 1px #334155; }
 </style>
