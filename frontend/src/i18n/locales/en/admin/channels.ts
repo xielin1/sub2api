@@ -571,6 +571,8 @@ export default {
         checkModeQuotaHint: 'Only queries the linked account usage windows / balance without probe requests',
         checkModeQuotaProbe: 'Probe + Quota',
         checkModeQuotaProbeHint: 'Probes the channel and attaches the quota snapshot to the primary model result',
+        checkModeIQ: 'IQ Radar',
+        checkModeIQHint: 'Sends the candy reasoning question; passes only when the answer is 21. Shown on the signed-in IQ Radar page',
         linkedAccount: 'Linked Account',
         linkedAccountPlaceholder: 'Select an account',
         linkedAccountHint: 'Quota data comes from the selected account (reuses the account-side usage/balance queries)',

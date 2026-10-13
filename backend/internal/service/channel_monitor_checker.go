@@ -51,6 +51,8 @@ type CheckOptions struct {
 	// BodyOverride 在 merge 模式下做浅合并（key 命中黑名单时静默丢弃），
 	// 在 replace 模式下直接当作完整 body。
 	BodyOverride map[string]any
+	// IQ 智商雷达检测：放宽输出上限、响应读取上限与请求超时。
+	IQ bool
 }
 
 // runCheckForModel 对单个 (provider, model) 做一次完整检测。
@@ -323,21 +325,31 @@ func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt
 	if err != nil {
 		return "", "", 0, 0, err
 	}
+	// 智商雷达需要完整推理，放宽输出上限、响应读取上限与请求超时。
+	client := monitorHTTPClient
+	maxBytes := int64(monitorResponseMaxBytes)
+	if opts != nil && opts.IQ {
+		if body, err = setIQMaxTokens(body, provider, apiMode); err != nil {
+			return "", "", 0, 0, err
+		}
+		client = monitorIQHTTPClient
+		maxBytes = monitorIQResponseMaxBytes
+	}
 	headers := mergeHeaders(adapter.buildHeaders(apiKey), opts)
 	full := joinURL(endpoint, monitorRequestPath(provider, endpoint, adapter, model))
 
 	// 2. 发起请求，计时从发请求开始。
 	start := time.Now()
-	resp, err := postMonitorRequest(ctx, full, body, headers)
+	resp, err := postMonitorRequest(ctx, client, full, body, headers)
 	if err != nil {
 		return "", "", 0, 0, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	reader := io.LimitReader(resp.Body, monitorResponseMaxBytes)
+	reader := io.LimitReader(resp.Body, maxBytes)
 
 	// 3. 上游返回 SSE：逐事件累积正文，并记录首个正文增量的到达时间。
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 && strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream") {
-		text, firstToken, err := readMonitorStream(reader, start, adapter, provider)
+		text, firstToken, err := readMonitorStream(reader, start, adapter, provider, int(maxBytes))
 		if err != nil {
 			return "", "", resp.StatusCode, 0, err
 		}
@@ -356,10 +368,10 @@ func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt
 }
 
 // readMonitorStream 读取 SSE 正文与首字延迟；收到协议结束事件后立即完成检测。
-func readMonitorStream(reader io.Reader, start time.Time, adapter providerAdapter, provider string) (string, time.Duration, error) {
-	// 1. 按 SSE data 行读取响应，沿用监控响应大小上限。
+func readMonitorStream(reader io.Reader, start time.Time, adapter providerAdapter, provider string, maxBytes int) (string, time.Duration, error) {
+	// 1. 按 SSE data 行读取响应，单行上限与本次响应读取上限一致。
 	scanner := bufio.NewScanner(reader)
-	scanner.Buffer(make([]byte, 0, 4096), monitorResponseMaxBytes)
+	scanner.Buffer(make([]byte, 0, 4096), maxBytes)
 	var text strings.Builder
 	var firstToken time.Duration
 	for scanner.Scan() {
@@ -661,7 +673,7 @@ func hasNonEmptyBodyValue(v any) bool {
 
 // postMonitorRequest 发送 POST + 已序列化好的 JSON 字节，返回未读取的响应，由调用方按 SSE 或 JSON 读取并关闭。
 // adapter 自行 marshal 是为了精确控制字段顺序与类型，所以这里直接收 []byte 而不是 any。
-func postMonitorRequest(ctx context.Context, fullURL string, payload []byte, headers map[string]string) (*http.Response, error) {
+func postMonitorRequest(ctx context.Context, client *http.Client, fullURL string, payload []byte, headers map[string]string) (*http.Response, error) {
 	// 1. 构造请求，同时接受 SSE 与 JSON（错误响应通常是 JSON）。
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fullURL, bytes.NewReader(payload))
 	if err != nil {
@@ -674,7 +686,7 @@ func postMonitorRequest(ctx context.Context, fullURL string, payload []byte, hea
 	}
 
 	// 2. 发送请求。
-	resp, err := monitorHTTPClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}

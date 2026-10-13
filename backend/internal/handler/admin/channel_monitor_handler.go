@@ -55,9 +55,9 @@ type channelMonitorCreateRequest struct {
 	BodyOverrideMode string            `json:"body_override_mode" binding:"omitempty,oneof=off merge replace"`
 	BodyOverride     map[string]any    `json:"body_override"`
 
-	// CheckMode: probe（默认）/ quota / quota_probe。quota 模式 endpoint/api_key
+	// CheckMode: probe（默认）/ quota / quota_probe / iq（智商雷达）。quota 模式 endpoint/api_key
 	// 可空（条件必填校验在 service 层按模式分支）。
-	CheckMode string `json:"check_mode" binding:"omitempty,oneof=probe quota quota_probe"`
+	CheckMode string `json:"check_mode" binding:"omitempty,oneof=probe quota quota_probe iq"`
 	// AccountID: 配额模式关联的账号 ID。
 	AccountID *int64 `json:"account_id"`
 }
@@ -81,7 +81,7 @@ type channelMonitorUpdateRequest struct {
 	BodyOverride     *map[string]any    `json:"body_override"`
 
 	// CheckMode/AccountID：nil = 不更新；AccountID 指向 0 = 清空关联。
-	CheckMode *string `json:"check_mode" binding:"omitempty,oneof=probe quota quota_probe"`
+	CheckMode *string `json:"check_mode" binding:"omitempty,oneof=probe quota quota_probe iq"`
 	AccountID *int64  `json:"account_id"`
 }
 

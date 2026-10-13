@@ -73,10 +73,12 @@ func monitorCheckModeUsesQuota(checkMode string) bool {
 //	------------------------+-------+-------+------------
 //	openai/anthropic/...    |  Y    |  Y    |  Y
 //	antigravity（无 adapter）|  N    |  Y    |  N
+//
+// iq（智商雷达）与 probe 一样需要探活 adapter。
 func validateCheckMode(provider, checkMode string) error {
 	checkMode = defaultCheckMode(checkMode)
 	switch checkMode {
-	case MonitorCheckModeProbe, MonitorCheckModeQuota, MonitorCheckModeQuotaProbe:
+	case MonitorCheckModeProbe, MonitorCheckModeQuota, MonitorCheckModeQuotaProbe, MonitorCheckModeIQ:
 	default:
 		return ErrChannelMonitorInvalidCheckMode
 	}

@@ -571,6 +571,8 @@ export default {
         checkModeQuotaHint: '只查询关联账号的用量滚动窗口/余额，不发送探活请求',
         checkModeQuotaProbe: '探活 + 配额',
         checkModeQuotaProbeHint: '探活的同时查询配额，用量快照附加在主模型结果上',
+        checkModeIQ: '智商雷达',
+        checkModeIQHint: '发送糖果推理题，答出 21 才算通过；结果只在登录后的智商雷达页展示',
         linkedAccount: '关联账号',
         linkedAccountPlaceholder: '选择账号',
         linkedAccountHint: '配额数据来自所选账号（复用账号管理侧的用量/余额查询）',

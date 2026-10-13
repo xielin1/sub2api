@@ -525,7 +525,8 @@ export default {
     checkMode: {
       probe: '探活',
       quota: '配额',
-      quota_probe: '探活 + 配额'
+      quota_probe: '探活 + 配额',
+      iq: '智商雷达'
     },
     // 配额快照展示（MonitorQuotaView，管理端与用户端共用）
     quota: {
@@ -567,6 +568,31 @@ export default {
     relativeMinutesAgo: '{n} 分钟前',
     relativeHoursAgo: '{n} 小时前',
     relativeDaysAgo: '{n} 天前'
+  },
+
+  // 智商雷达（登录用户只读）
+  iqRadar: {
+    title: '智商雷达',
+    subtitle: '定时向各分组发送需要推理的糖果题，答出 21 才算通过，用来观察渠道是否降智。',
+    loadError: '加载智商雷达失败',
+    emptyTitle: '暂无检测分组',
+    emptyDescription: '管理员在渠道监控中新建「智商雷达」检测后，结果会显示在这里。',
+    passRate: '通过率',
+    passRateHint: '最近 {n} 次',
+    lastElapsed: '最近耗时',
+    timeline: '最近 {n} 次检测',
+    every: '每 {n} 分钟检测一次',
+    past: '更早',
+    now: '现在',
+    recent: '最近记录',
+    noRecords: '尚无检测记录',
+    status: {
+      operational: '通过',
+      failed: '降智',
+      error: '请求失败',
+      unknown: '未检测'
+    },
+    legend: '通过 = 回答出现 21；降智 = 回答了其他数字；请求失败 = 上游报错或超时。单次结果受随机性影响，请结合多次记录判断。'
   },
 
   // Channel Status (user-facing read-only view)

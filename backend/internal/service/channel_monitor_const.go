@@ -11,6 +11,12 @@ import (
 const (
 	// monitorRequestTimeout 单次模型请求总超时（含 Body 读取）。
 	monitorRequestTimeout = 90 * time.Second
+	// monitorIQRequestTimeout 1. 智商雷达单次请求总超时：满血模型需要思考约 2 分钟。
+	monitorIQRequestTimeout = 300 * time.Second
+	// monitorIQResponseMaxBytes 2. 智商雷达响应读取上限：推理过程的流式事件远大于算术探活。
+	monitorIQResponseMaxBytes = 4 * 1024 * 1024
+	// monitorIQMaxTokens 3. 智商雷达输出预算：需要容纳推理 token 与完整解答。
+	monitorIQMaxTokens = 16000
 	// monitorPingTimeout HEAD 请求 endpoint origin 的超时。
 	monitorPingTimeout = 8 * time.Second
 	// monitorDegradedThreshold 1. 成功响应在 10 秒以内（含 10 秒）为正常，超过才视为 degraded。
@@ -78,6 +84,8 @@ const (
 	MonitorCheckModeProbe      = "probe"
 	MonitorCheckModeQuota      = "quota"
 	MonitorCheckModeQuotaProbe = "quota_probe"
+	// MonitorCheckModeIQ 1. 智商雷达：发送糖果推理题，回答中出现独立的 21 才算通过。
+	MonitorCheckModeIQ = "iq"
 
 	// MonitorDefaultQuotaModel 是 quota 模式监控未显式指定模型时占位的虚拟模型名
 	// （primary_model 列 NotEmpty，用 "quota" 让历史行/时间线机制无需特判）。
@@ -155,7 +163,7 @@ var (
 		"CHANNEL_MONITOR_INVALID_PROVIDER", "provider must be one of openai/anthropic/gemini/grok/antigravity/kimi/zhipu/deepseek/minimax",
 	)
 	ErrChannelMonitorInvalidCheckMode = infraerrors.BadRequest(
-		"CHANNEL_MONITOR_INVALID_CHECK_MODE", "check_mode must be one of probe/quota/quota_probe; antigravity only supports quota",
+		"CHANNEL_MONITOR_INVALID_CHECK_MODE", "check_mode must be one of probe/quota/quota_probe/iq; antigravity only supports quota",
 	)
 	ErrChannelMonitorAccountRequired = infraerrors.BadRequest(
 		"CHANNEL_MONITOR_ACCOUNT_REQUIRED", "account_id is required for quota-based check_mode",

@@ -520,7 +520,8 @@ export default {
     checkMode: {
       probe: 'Probe',
       quota: 'Quota',
-      quota_probe: 'Probe + Quota'
+      quota_probe: 'Probe + Quota',
+      iq: 'IQ Radar'
     },
     // Quota snapshot rendering (MonitorQuotaView, shared by admin + user views)
     quota: {
@@ -565,6 +566,31 @@ export default {
   },
 
   // Channel Status (user-facing read-only view)
+  // IQ Radar (signed-in read-only view)
+  iqRadar: {
+    title: 'IQ Radar',
+    subtitle: 'Each group is periodically asked the candy reasoning question; it passes only when the answer is 21, revealing degraded channels.',
+    loadError: 'Failed to load IQ Radar',
+    emptyTitle: 'No groups under test',
+    emptyDescription: 'Results appear here after an admin creates an "IQ Radar" channel monitor.',
+    passRate: 'Pass rate',
+    passRateHint: 'last {n} runs',
+    lastElapsed: 'Last duration',
+    timeline: 'Last {n} runs',
+    every: 'Every {n} min',
+    past: 'Earlier',
+    now: 'Now',
+    recent: 'Recent runs',
+    noRecords: 'No runs yet',
+    status: {
+      operational: 'Passed',
+      failed: 'Degraded',
+      error: 'Request failed',
+      unknown: 'Not tested'
+    },
+    legend: 'Passed = the answer contains 21; Degraded = another number was given; Request failed = upstream error or timeout. Single runs are noisy, judge by the trend.'
+  },
+
   channelStatus: {
     title: 'Channel Status',
     rate: 'Rate',

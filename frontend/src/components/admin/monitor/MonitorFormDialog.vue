@@ -11,10 +11,10 @@
         <input v-model="form.name" type="text" required class="input" :placeholder="t('admin.channelMonitor.form.namePlaceholder')" />
       </div>
 
-      <!-- 检测模式：probe（探活）/ quota（仅配额）/ quota_probe（探活+配额） -->
+      <!-- 检测模式：probe（探活）/ quota（仅配额）/ quota_probe（探活+配额）/ iq（智商雷达） -->
       <div>
         <label class="input-label">{{ t('admin.channelMonitor.form.checkMode') }}</label>
-        <div class="grid gap-3 sm:grid-cols-3" data-testid="monitor-check-mode">
+        <div class="grid gap-3 sm:grid-cols-4" data-testid="monitor-check-mode">
           <button
             v-for="opt in checkModeOptions"
             :key="opt.value"
@@ -276,6 +276,7 @@ import {
   CHECK_MODE_PROBE,
   CHECK_MODE_QUOTA,
   CHECK_MODE_QUOTA_PROBE,
+  CHECK_MODE_IQ,
   DEFAULT_GROK_ENDPOINT,
   DEFAULT_GROK_MODEL,
   DEFAULT_KIMI_ENDPOINT,
@@ -359,8 +360,8 @@ const form = reactive<MonitorForm>({
   body_override: null,
 })
 
-// quota / quota_probe 需要关联账号；probe / quota_probe 需要探活字段。
-const usesQuotaMode = computed(() => form.check_mode !== CHECK_MODE_PROBE)
+// quota / quota_probe 需要关联账号；probe / quota_probe / iq 需要探活字段。
+const usesQuotaMode = computed(() => form.check_mode === CHECK_MODE_QUOTA || form.check_mode === CHECK_MODE_QUOTA_PROBE)
 const usesProbePart = computed(() => form.check_mode !== CHECK_MODE_QUOTA)
 
 // jitter 上限与后端校验一致：interval - jitter 不得低于最小检测间隔 15 秒。
@@ -516,6 +517,13 @@ const checkModeOptions = computed<CheckModeOption[]>(() => [
     label: t('admin.channelMonitor.form.checkModeQuotaProbe'),
     hint: t('admin.channelMonitor.form.checkModeQuotaProbeHint'),
     // antigravity 无探活 adapter，只支持配额模式。
+    disabled: form.provider === PROVIDER_ANTIGRAVITY,
+  },
+  {
+    value: CHECK_MODE_IQ,
+    label: t('admin.channelMonitor.form.checkModeIQ'),
+    hint: t('admin.channelMonitor.form.checkModeIQHint'),
+    // 智商雷达同样需要探活 adapter。
     disabled: form.provider === PROVIDER_ANTIGRAVITY,
   },
 ])

@@ -149,6 +149,7 @@ type UserMonitorView struct {
 	ID                   int64
 	Name                 string
 	Provider             string
+	CheckMode            string // 渠道状态页排除 iq，智商雷达页只展示 iq
 	GroupName            string
 	PrimaryModel         string
 	PrimaryStatus        string
@@ -182,6 +183,7 @@ type UserMonitorDetail struct {
 	ID        int64
 	Name      string
 	Provider  string
+	CheckMode string // 公开详情接口据此隐藏仅登录可见的智商雷达监控
 	GroupName string
 	Models    []ModelDetail
 }

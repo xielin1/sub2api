@@ -21,9 +21,9 @@ export type BodyOverrideMode = 'off' | 'merge' | 'replace'
 export type APIMode = 'chat_completions' | 'responses'
 /**
  * probe = LLM 探活（默认）；quota = 仅查关联账号用量（零 LLM 成本）；
- * quota_probe = 探活 + 配额快照挂主模型行。
+ * quota_probe = 探活 + 配额快照挂主模型行；iq = 智商雷达糖果题。
  */
-export type CheckMode = 'probe' | 'quota' | 'quota_probe'
+export type CheckMode = 'probe' | 'quota' | 'quota_probe' | 'iq'
 
 /** 配额快照中的单个用量窗口（与后端 domain.MonitorQuotaTier 一致）。 */
 export interface MonitorQuotaTier {

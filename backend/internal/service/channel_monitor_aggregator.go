@@ -77,6 +77,35 @@ func (s *ChannelMonitorService) ListUserView(ctx context.Context) ([]*UserMonito
 	return views, nil
 }
 
+// IQRadarView 智商雷达页的单个监控：基本信息 + 主模型最近的检测记录（含判分说明）。
+type IQRadarView struct {
+	Monitor *ChannelMonitor
+	History []*ChannelMonitorHistoryEntry // 按 checked_at DESC，最新在前
+}
+
+// ListIQRadar 列出所有启用的智商雷达监控及其主模型最近 monitorTimelineMaxPoints 条记录。
+// 智商雷达监控数量少，逐个查询历史即可。
+func (s *ChannelMonitorService) ListIQRadar(ctx context.Context) ([]*IQRadarView, error) {
+	// 1. 取启用的监控，只保留 check_mode = iq 的。
+	monitors, err := s.repo.ListEnabled(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list enabled monitors: %w", err)
+	}
+	views := make([]*IQRadarView, 0)
+	for _, m := range monitors {
+		if defaultCheckMode(m.CheckMode) != MonitorCheckModeIQ {
+			continue
+		}
+		// 2. 查主模型最近的检测记录，message 中保留了未通过时的回答结尾。
+		history, err := s.repo.ListHistory(ctx, m.ID, m.PrimaryModel, monitorTimelineMaxPoints)
+		if err != nil {
+			return nil, fmt.Errorf("list iq radar history: %w", err)
+		}
+		views = append(views, &IQRadarView{Monitor: m, History: history})
+	}
+	return views, nil
+}
+
 // collectMonitorIndexes 把 monitors 列表按 ID 展开为聚合查询所需的三个索引结构。
 func collectMonitorIndexes(monitors []*ChannelMonitor) ([]int64, map[int64]string, map[int64][]string) {
 	ids := make([]int64, 0, len(monitors))
@@ -152,6 +181,7 @@ func (s *ChannelMonitorService) GetUserDetail(ctx context.Context, id int64) (*U
 		ID:        m.ID,
 		Name:      m.Name,
 		Provider:  m.Provider,
+		CheckMode: defaultCheckMode(m.CheckMode),
 		GroupName: m.GroupName,
 		Models:    models,
 	}, nil
@@ -234,6 +264,7 @@ func buildUserViewFromSummary(
 		ID:               m.ID,
 		Name:             m.Name,
 		Provider:         m.Provider,
+		CheckMode:        defaultCheckMode(m.CheckMode),
 		GroupName:        m.GroupName,
 		PrimaryModel:     m.PrimaryModel,
 		PrimaryStatus:    summary.PrimaryStatus,

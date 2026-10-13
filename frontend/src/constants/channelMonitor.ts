@@ -33,6 +33,8 @@ export const DEFAULT_OPENCODE_GO_ENDPOINT = 'https://opencode.ai/zen/go/v1'
 export const CHECK_MODE_PROBE: CheckMode = 'probe'
 export const CHECK_MODE_QUOTA: CheckMode = 'quota'
 export const CHECK_MODE_QUOTA_PROBE: CheckMode = 'quota_probe'
+/** 智商雷达：发送糖果推理题，回答出现独立的 21 判为通过。 */
+export const CHECK_MODE_IQ: CheckMode = 'iq'
 
 export const API_MODE_CHAT_COMPLETIONS: APIMode = 'chat_completions'
 export const API_MODE_RESPONSES: APIMode = 'responses'
@@ -57,6 +59,7 @@ export const CHECK_MODES: readonly CheckMode[] = [
   CHECK_MODE_PROBE,
   CHECK_MODE_QUOTA,
   CHECK_MODE_QUOTA_PROBE,
+  CHECK_MODE_IQ,
 ]
 
 export const API_MODES: readonly APIMode[] = [

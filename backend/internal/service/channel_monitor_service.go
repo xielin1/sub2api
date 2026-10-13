@@ -627,6 +627,7 @@ func (s *ChannelMonitorService) RunCheck(ctx context.Context, id int64) ([]*Chec
 		results = s.runChecksConcurrent(ctx, m)
 		attachQuotaSnapshot(results, s.fetchQuotaSnapshot(ctx, m))
 	default:
+		// probe 与 iq（智商雷达）都走探活并发检测，题目与判分在 runChecksConcurrent 内区分。
 		results = s.runChecksConcurrent(ctx, m)
 	}
 	s.persistCheckResults(ctx, m, results)
@@ -708,6 +709,7 @@ func (s *ChannelMonitorService) runChecksConcurrent(ctx context.Context, m *Chan
 		ExtraHeaders:     m.ExtraHeaders,
 		BodyOverrideMode: m.BodyOverrideMode,
 		BodyOverride:     m.BodyOverride,
+		IQ:               defaultCheckMode(m.CheckMode) == MonitorCheckModeIQ,
 	}
 
 	var eg errgroup.Group
@@ -715,7 +717,13 @@ func (s *ChannelMonitorService) runChecksConcurrent(ctx context.Context, m *Chan
 	for i, model := range models {
 		i, model := i, model
 		eg.Go(func() error {
-			r := runCheckForModel(ctx, m.Provider, m.Endpoint, m.APIKey, model, opts)
+			// 智商雷达发送糖果题并按答案判分，其余探活发送算术题。
+			var r *CheckResult
+			if opts.IQ {
+				r = runIQCheckForModel(ctx, m.Provider, m.Endpoint, m.APIKey, model, opts)
+			} else {
+				r = runCheckForModel(ctx, m.Provider, m.Endpoint, m.APIKey, model, opts)
+			}
 			r.PingLatencyMs = pingMs
 			mu.Lock()
 			results[i] = r

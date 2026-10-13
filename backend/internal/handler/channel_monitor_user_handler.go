@@ -187,6 +187,10 @@ func (h *ChannelMonitorUserHandler) List(c *gin.Context) {
 	includeQuota := h.quotaVisible(c)
 	items := make([]channelMonitorUserListItem, 0, len(views))
 	for _, v := range views {
+		// 3. 智商雷达监控仅登录用户在智商雷达页查看，不进入公开的渠道状态页
+		if v.CheckMode == service.MonitorCheckModeIQ {
+			continue
+		}
 		item := userMonitorViewToItem(v, includeQuota)
 		if rate, ok := rateByGroupName[v.GroupName]; ok {
 			item.RateMultiplier = &rate
@@ -212,5 +216,66 @@ func (h *ChannelMonitorUserHandler) GetStatus(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
+	// 智商雷达监控不对匿名访客公开，公开详情接口按不存在处理
+	if detail.CheckMode == service.MonitorCheckModeIQ {
+		response.ErrorFrom(c, service.ErrChannelMonitorNotFound)
+		return
+	}
 	response.Success(c, userMonitorDetailToResponse(detail))
+}
+
+// iqRadarItem 智商雷达页单个监控。
+type iqRadarItem struct {
+	ID              int64            `json:"id"`
+	Name            string           `json:"name"`
+	Provider        string           `json:"provider"`
+	GroupName       string           `json:"group_name"`
+	Model           string           `json:"model"`
+	IntervalSeconds int              `json:"interval_seconds"`
+	History         []iqRadarHistory `json:"history"`
+}
+
+// iqRadarHistory 智商雷达单次检测：operational = 答对，failed = 答错，error = 请求失败。
+type iqRadarHistory struct {
+	Status    string `json:"status"`
+	LatencyMs *int   `json:"latency_ms"`
+	Message   string `json:"message"`
+	CheckedAt string `json:"checked_at"`
+}
+
+// IQRadar GET /api/v1/iq-radar（仅登录用户）
+func (h *ChannelMonitorUserHandler) IQRadar(c *gin.Context) {
+	// 1. 渠道监控功能关闭时不展示任何智商雷达数据
+	if !h.featureEnabled(c) {
+		response.Success(c, gin.H{"items": []iqRadarItem{}})
+		return
+	}
+	views, err := h.monitorService.ListIQRadar(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	// 2. 组装响应，不下发 endpoint 与 api_key
+	items := make([]iqRadarItem, 0, len(views))
+	for _, v := range views {
+		history := make([]iqRadarHistory, 0, len(v.History))
+		for _, e := range v.History {
+			history = append(history, iqRadarHistory{
+				Status:    e.Status,
+				LatencyMs: e.LatencyMs,
+				Message:   e.Message,
+				CheckedAt: e.CheckedAt.UTC().Format(time.RFC3339),
+			})
+		}
+		items = append(items, iqRadarItem{
+			ID:              v.Monitor.ID,
+			Name:            v.Monitor.Name,
+			Provider:        v.Monitor.Provider,
+			GroupName:       v.Monitor.GroupName,
+			Model:           v.Monitor.PrimaryModel,
+			IntervalSeconds: v.Monitor.IntervalSeconds,
+			History:         history,
+		})
+	}
+	response.Success(c, gin.H{"items": items})
 }

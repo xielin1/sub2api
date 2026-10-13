@@ -43,6 +43,8 @@ func RegisterUserRoutes(
 		authenticated.GET("/settings/sales-recruitment", h.Setting.GetSalesRecruitment)
 		// 1. 工作台沿用用户登录鉴权，只读取异步生图开关。
 		authenticated.GET("/image-workspace/config", h.AsyncImage.WorkspaceConfig)
+		// 1. 智商雷达只对登录用户开放，复用渠道监控的检测记录。
+		authenticated.GET("/iq-radar", h.ChannelMonitor.IQRadar)
 		// 用户接口
 		user := authenticated.Group("/user")
 		{

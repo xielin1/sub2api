@@ -290,6 +290,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/iq-radar',
+    name: 'IQRadar',
+    component: () => import('@/views/user/IQRadarView.vue'),
+    meta: {
+      // 智商雷达只对登录用户开放
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'IQ Radar',
+      titleKey: 'iqRadar.title'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),

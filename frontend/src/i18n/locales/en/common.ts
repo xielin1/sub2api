@@ -209,6 +209,7 @@ export default {
     channelPricing: 'Channel Pricing',
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
+    iqRadar: 'IQ Radar',
     riskControl: 'Risk Control',
     securityAudit: 'Security Audit',
     contentModeration: 'Content Moderation',

@@ -82,9 +82,39 @@ export async function status(id: number): Promise<UserMonitorDetail> {
   return data
 }
 
+/** 智商雷达单次检测：operational = 答对，failed = 答错（降智），error = 请求失败。 */
+export interface IQRadarRecord {
+  status: MonitorStatus
+  latency_ms: number | null
+  message: string
+  checked_at: string
+}
+
+export interface IQRadarItem {
+  id: number
+  name: string
+  provider: Provider
+  group_name: string
+  model: string
+  interval_seconds: number
+  /** 按检测时间倒序，最新在前 */
+  history: IQRadarRecord[]
+}
+
+/**
+ * List IQ radar monitors with recent candy-question results (signed-in users only).
+ */
+export async function iqRadar(options?: { signal?: AbortSignal }): Promise<{ items: IQRadarItem[] }> {
+  const { data } = await apiClient.get<{ items: IQRadarItem[] }>('/iq-radar', {
+    signal: options?.signal,
+  })
+  return data
+}
+
 export const channelMonitorUserAPI = {
   list,
   status,
+  iqRadar,
 }
 
 export default channelMonitorUserAPI
