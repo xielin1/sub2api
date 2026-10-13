@@ -104,6 +104,13 @@ func runCheckForModel(ctx context.Context, provider, endpoint, apiKey, model str
 		return finalizeOperationalOrDegraded(res, latency, latencyMs)
 	}
 
+	// 3. 已完成响应但没有正文时，单独记录空响应，便于区分协议错误与答案错误。
+	if strings.TrimSpace(respText) == "" {
+		res.Status = MonitorStatusFailed
+		res.Message = "upstream returned 2xx with empty text"
+		return res
+	}
+
 	if !validateChallenge(respText, challenge.Expected) {
 		res.Status = MonitorStatusFailed
 		res.Message = truncateMessage(sanitizeErrorMessage(fmt.Sprintf("challenge mismatch (expected %s, got %q)", challenge.Expected, respText)))
@@ -116,11 +123,13 @@ func runCheckForModel(ctx context.Context, provider, endpoint, apiKey, model str
 // finalizeOperationalOrDegraded 负责走到最后一步的 operational/degraded 判定。
 // 拆出来是为了让 runCheckForModel 不超过 30 行。
 func finalizeOperationalOrDegraded(res *CheckResult, latency time.Duration, latencyMs int) *CheckResult {
-	if latency >= monitorDegradedThreshold {
+	// 1. 只有成功响应耗时超过阈值才标记为慢，恰好 10 秒仍显示绿色。
+	if latency > monitorDegradedThreshold {
 		res.Status = MonitorStatusDegraded
 		res.Message = truncateMessage(fmt.Sprintf("slow response: %dms", latencyMs))
 		return res
 	}
+	// 2. 阈值以内的成功响应标记为正常。
 	res.Status = MonitorStatusOperational
 	return res
 }
@@ -328,7 +337,7 @@ func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt
 
 	// 3. 上游返回 SSE：逐事件累积正文，并记录首个正文增量的到达时间。
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 && strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream") {
-		text, firstToken, err := readMonitorStream(reader, start, adapter)
+		text, firstToken, err := readMonitorStream(reader, start, adapter, provider)
 		if err != nil {
 			return "", "", resp.StatusCode, 0, err
 		}
@@ -346,40 +355,76 @@ func callProvider(ctx context.Context, provider, endpoint, apiKey, model, prompt
 	return extractMonitorResponseText(adapter, respBytes), string(respBytes), resp.StatusCode, 0, nil
 }
 
-// readMonitorStream 读取 SSE 响应，拼接全部正文增量，返回正文与首个正文增量的到达耗时。
-func readMonitorStream(reader io.Reader, start time.Time, adapter providerAdapter) (string, time.Duration, error) {
+// readMonitorStream 读取 SSE 正文与首字延迟；收到协议结束事件后立即完成检测。
+func readMonitorStream(reader io.Reader, start time.Time, adapter providerAdapter, provider string) (string, time.Duration, error) {
+	// 1. 按 SSE data 行读取响应，沿用监控响应大小上限。
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 0, 4096), monitorResponseMaxBytes)
 	var text strings.Builder
 	var firstToken time.Duration
 	for scanner.Scan() {
-		// 1. 只处理 data 行，event / 注释 / 空行 / [DONE] 直接跳过。
 		data, ok := strings.CutPrefix(scanner.Text(), "data:")
 		if !ok {
 			continue
 		}
 		data = strings.TrimSpace(data)
-		if data == "" || data == "[DONE]" {
+		if data == "" {
 			continue
 		}
-		// 2. 按 provider 提取正文增量，thinking / 元数据事件不计入。
+		// 2. Chat Completions 的结束标记代表响应已完成，不再等待连接关闭。
+		if data == "[DONE]" {
+			return text.String(), firstToken, nil
+		}
+		if !gjson.Valid(data) {
+			return "", 0, fmt.Errorf("invalid stream JSON: %s", truncateForErrorBody(data))
+		}
+		event := gjson.Parse(data)
+		// 3. HTTP 200 中的错误事件仍是上游失败，保留错误与截断原因。
+		if upstreamError := event.Get("error"); upstreamError.Exists() && upstreamError.Type != gjson.Null {
+			return "", 0, fmt.Errorf("upstream stream error: %s", truncateForErrorBody(upstreamError.Raw))
+		}
+		switch event.Get("type").String() {
+		case "error":
+			return "", 0, fmt.Errorf("upstream stream failed: %s", truncateForErrorBody(data))
+		case "response.failed":
+			return "", 0, fmt.Errorf("upstream response failed: %s", truncateForErrorBody(event.Get("response.error").Raw))
+		case "response.incomplete":
+			return "", 0, fmt.Errorf("upstream response incomplete: %s", truncateForErrorBody(event.Get("response.incomplete_details").Raw))
+		}
+		// 4. 只累计正文增量，推理与元数据不计入首字延迟。
 		var delta string
 		if adapter.extractStreamText != nil {
 			delta = adapter.extractStreamText([]byte(data))
 		} else {
 			delta = gjson.Get(data, adapter.streamTextPath).String()
 		}
-		if delta == "" {
-			continue
+		if delta != "" {
+			if firstToken == 0 {
+				firstToken = time.Since(start)
+			}
+			text.WriteString(delta)
 		}
-		// 3. 第一次拿到正文时记录首字延迟。
-		if firstToken == 0 {
-			firstToken = time.Since(start)
+		// 5. Responses / Anthropic 按各自的结束事件完成；最终整包可提供未发 delta 的正文。
+		switch event.Get("type").String() {
+		case "response.completed":
+			if text.Len() == 0 {
+				text.WriteString(extractOpenAIResponsesText([]byte(event.Get("response").Raw)))
+				if text.Len() > 0 {
+					firstToken = time.Since(start)
+				}
+			}
+			return text.String(), firstToken, nil
+		case "message_stop":
+			return text.String(), firstToken, nil
 		}
-		text.WriteString(delta)
 	}
+	// 6. 未完成响应时的读取错误向上传递，不能把半段回答当作可用。
 	if err := scanner.Err(); err != nil {
 		return "", 0, fmt.Errorf("read stream: %w", err)
+	}
+	// 7. Gemini 以流关闭结束；其他协议缺少结束标记说明响应被截断。
+	if provider != MonitorProviderGemini {
+		return "", 0, fmt.Errorf("upstream stream closed before completion")
 	}
 	return text.String(), firstToken, nil
 }

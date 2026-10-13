@@ -1,5 +1,23 @@
 # 开发记录
 
+## 2026-10-10：监控绿色耗时范围调整为 10 秒，发布 0.2.15-x3
+
+- 改动：成功探测的正文首字耗时不超过 10 秒（含恰好 10 秒）记为 operational；超过 10 秒记为 degraded。沿用原有判定函数，仅调整共享阈值和比较符，不修改失败判定或历史记录。
+- 验证：Linux amd64 embed 构建与 diff 检查通过；上线首轮六个自动探测中，1.57–2.14 秒的四条记录为 operational，12.06 秒和 21.63 秒的两条记录为 degraded。未新增或运行测试。
+- 发布：服务器 2 已切换为 `sub2api:0.2.15-x3`，容器 healthy、重启 0，公网 `/health` 返回 200；六个定时监控任务正常启动。程序 SHA256 为 `c6445879658592cfde67c3fa70db7083121a3f853cdf315dbe55b1cefa489b43`。未执行 Git 暂存、提交或推送。
+- 回退：旧 Compose 保存在 `server-2:/opt/sub2api/backups/release-0.2.15-x3-monitor-10s`，回退镜像为 `sub2api:rollback-before-0.2.15-x3-monitor-10s`；没有数据库变更。
+- 限制：历史黄色记录仍保留原判定，新的颜色规则从发布后的探测生效；耗时继续使用正文首字口径。
+
+## 2026-10-10：上游状态直测与 SSE 判定修复，发布 0.2.15-x2
+
+- 改动：监控读取器收到 `[DONE]`、`response.completed`、`message_stop` 即完成；Responses 最终整包可提供未发 delta 的正文；HTTP 200 中的 `error`、`response.failed`、`response.incomplete` 分别保留上游失败与截断原因；非 Gemini 流缺失结束标记时报错。空正文单独记录，不再写成算术答案不匹配。等待响应头由 30 秒改为 60 秒，总超时由 45 秒改为 90 秒。
+- 口径：IDEA Gates 状态页实际监测 `gpt-5.6-sol`，原本站 GPT 探测为 `gpt-6.1-sol` 且经过本站网关与 Cloudflare。改为对应上游 API 直测，GPT 使用 `gpt-5.6-sol`，Grok 使用 `grok-4.7`；监控名称标注「上游」。维持随机算术 challenge、50 token 输出预算与原慢响应判定，不把真实失败改成成功。
+- 配置：复用既有监控复制接口创建独立统计，新监控 21–26 分别使用上游账号 30、29、28、32、31、35；旧监控 11、12、13、15、16、18 恢复原本站 endpoint/key/model，改名「本站链路历史」并停用。旧历史保留，新统计从切换时刻开始，不将旧本站链路数据称为上游可用率。
+- 验证：现有 `TestCallProvider`、`TestRunCheckForModel`、URL 与 Grok 相关 service 单元测试通过；Linux amd64 embed 构建与 diff 检查通过。六个新监控的手动探测均成功返回正确答案（1.25–33.60 秒，慢响应仍记录 degraded）；公开列表只展示六个新监控。同期自动探测捕获账号 32 的 HTTP 200 流内 `upstream_error`，新监控 24 正确记录 error，随后手动探测 operational；首次两条样本可用率 50%，属于真实采样结果。
+- 发布：服务器 2 使用 `sub2api:0.2.15-x2`，只重建 sub2api 容器，无数据库迁移。容器 healthy、重启 0，`/health` 200；上线后的 `/v1/responses`、`/v1/chat/completions` 实际请求 200，无应用 ERROR/FATAL。程序为当前工作区构建，未执行 Git 暂存、提交或推送。
+- 备份：`server-2:/opt/sub2api/backups/release-0.2.15-x2-monitor` 保留旧 Compose、PostgreSQL dump（135,403,773 字节，`pg_restore --list` 1216 项）、旧监控配置与新旧 ID 映射；回退镜像 `sub2api:rollback-before-0.2.15-x2-monitor`。仅切镜像不会恢复监控配置，配置回退需停用 21–26 并恢复旧监控原配置与启用状态。
+- 限制：本页体现对应上游账号在服务器 2 发起探测时的可用性，不代表本站完整请求链路或所有模型；探测时刻、源网络与状态分类不同，无法保证与上游页面逐秒同色。新统计样本少，100% 不代表已有完整七天观测。
+
 ## 2026-10-10：合并官方 0.2.15 并更新线上2
 
 - 合并：`main` 合入 `upstream/main`（`3a6fd1c9d`，官方 0.2.15，146 个提交：接入 Cline、Command Code 平台；平台白名单改由应用层平台清单校验；provider profile 收敛多协议端点；Go 升级到 1.27.2 与 x/net 安全修复；渠道监控要求有请求样本再评分；单请求输出 TPS 等），合并提交 `de4ad6219`。冲突：`VERSION`（改为 `0.2.15-x1`）；`channel_monitor_checker.go`（保留本地流式读取，请求路径改用上游 `monitorRequestPath`）；`openai_gateway_forward.go`（采用上游更宽的 `invalidEncryptedContentError` 判定，本地 turn-state 拒绝判断同样使用它）；前端 `AccountPlatform` 改用上游平台清单写法，`AccountType` 保留 `cpr`；两个前端测试文件合并双方新增内容。新迁移 `242_drop_platform_check_constraints.sql`（删除两个平台 CHECK 约束）。
